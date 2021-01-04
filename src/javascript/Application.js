@@ -4,9 +4,10 @@ import { EffectComposer, RenderPass, EffectPass, SMAAEffect } from 'postprocessi
 import * as dat from 'dat.gui';
 import Stats from 'stats.js';
 
-import TDSLoader from './Loaders/TDSLoader.js';
 import Sizes from './Utils/Sizes.js';
 import Time from './Utils/Time.js';
+import Resources from './Resources';
+import World from './Models/World';
 
 const OrbitControls = ThreeOrbitControls(THREE);
 
@@ -23,28 +24,29 @@ export default class Application {
     // Set up
     this.time = new Time();
     this.sizes = new Sizes();
-    this.tdsLoader = new TDSLoader();
+    this.resources = new Resources();
 
-    // Load resources
-    this.resources = {};
+    this.setStats();
 
-    this.resources.searchImage = new Image();
-    this.resources.searchImage.addEventListener('load', () => {
-      this.resources.areaImage = new Image();
-      this.resources.areaImage.addEventListener('load', () => {
-        this.tdsLoader.load('suzanne.3ds', (_suzanne) => {
-          this.resources.suzanne = _suzanne.children[0];
-
-          // Set environment
-          this.setEnvironment();
-
-          // Set debug
-          this.setDebug();
-        });
-      });
-      this.resources.areaImage.src = SMAAEffect.areaImageDataURL;
+    this.resources.on('progress', (progress) => {
+      console.log('Progress:', progress);
     });
-    this.resources.searchImage.src = SMAAEffect.searchImageDataURL;
+
+    this.resources.on('ready', () => {
+      // Set environment
+      this.setEnvironment();
+
+      // Set debug
+      this.setDebug();
+
+      this.setWorld();
+    });
+  }
+
+  setStats() {
+    this.stats = new Stats();
+    this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+    document.body.appendChild(this.stats.dom);
   }
 
   /**
@@ -60,29 +62,33 @@ export default class Application {
     this.renderer.setSize(this.sizes.viewport.width, this.sizes.viewport.height);
 
     // Camera
-    this.camera = new THREE.PerspectiveCamera(
-      75,
-      this.sizes.viewport.width / this.sizes.viewport.height,
-      1,
-      100
-    );
-    this.camera.position.set(0, 1, -3);
+    const aspectRatio = this.sizes.viewport.width / this.sizes.viewport.height;
+    this.camera = new THREE.PerspectiveCamera(50, aspectRatio, 1, 100);
+    this.camera.up.set(0, 0, 1);
+    this.camera.position.set(3, 3, 2);
     this.camera.lookAt(new THREE.Vector3());
     this.scene.add(this.camera);
 
     // Controls
     this.controls = new OrbitControls(this.camera, this.$canvas);
 
+    // Light
+    const light = new THREE.AmbientLight(0x909090); // soft white light
+    this.scene.add(light);
+
     // Suzanne
-    this.resources.suzanne.geometry.rotateX(-Math.PI * 0.5);
-    this.resources.suzanne.geometry.rotateY(Math.PI);
-    this.suzanne = new THREE.Mesh(this.resources.suzanne.geometry, new THREE.MeshNormalMaterial());
+    this.resources.items.suzanne.geometry.scale(0.5, 0.5, 0.5);
+    this.suzanne = new THREE.Mesh(
+      this.resources.items.suzanne.geometry,
+      new THREE.MeshNormalMaterial()
+    );
+    this.suzanne.position.set(2, 0, 0);
     this.scene.add(this.suzanne);
 
+    this.scene.add(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5), new THREE.MeshNormalMaterial()));
+
     // Composer
-    this.composer = new EffectComposer(this.renderer, {
-      depthTexture: false,
-    });
+    this.composer = new EffectComposer(this.renderer, { depthTexture: false });
 
     // Passes
     this.passes = {};
@@ -121,7 +127,7 @@ export default class Application {
     this.time.on('tick', () => {
       this.stats.begin();
 
-      this.suzanne.rotation.y += 0.01;
+      this.suzanne.rotation.z += 0.01;
 
       // Renderer
       if (this.useComposer) {
@@ -151,19 +157,27 @@ export default class Application {
     });
   }
 
+  setWorld() {
+    this.world = new World({
+      resources: this.resources,
+    });
+    this.scene.add(this.world.container);
+  }
+
   /**
    * Set debug
    */
   setDebug() {
     this.debug = new dat.GUI();
 
-    this.debug.add(this.suzanne.scale, 'x', 0.01, 10, 0.001);
-    this.debug.add(this.suzanne.scale, 'y', 0.01, 10, 0.001);
-    this.debug.add(this.suzanne.scale, 'z', 0.01, 10, 0.001);
+    const cameraFolder = this.debug.addFolder('camera');
+    cameraFolder
+      .add(this.camera, 'fov', 0, 100)
+      .onChange(() => this.camera.updateProjectionMatrix());
 
-    this.stats = new Stats();
-    this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-    document.body.appendChild(this.stats.dom);
+    this.debug.add(this.suzanne.scale, 'x', 0.01, 2, 0.001);
+    this.debug.add(this.suzanne.scale, 'y', 0.01, 2, 0.001);
+    this.debug.add(this.suzanne.scale, 'z', 0.01, 2, 0.001);
   }
 
   /**

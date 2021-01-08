@@ -31,12 +31,12 @@ export default class {
   }
 
   setReveal() {
-    this.physics.car.chassis.body.sleep();
-    this.physics.car.chassis.body.position.set(0, 0, 12);
-
-    window.setTimeout(() => {
-      this.physics.car.chassis.body.wakeUp();
-    }, 300);
+    // this.physics.car.chassis.body.sleep();
+    // this.physics.car.chassis.body.position.set(0, 0, 12);
+    //
+    // window.setTimeout(() => {
+    //   this.physics.car.chassis.body.wakeUp();
+    // }, 300);
   }
 
   setAxes() {

@@ -7,8 +7,8 @@ export default class Floor {
     this.container.matrixAutoUpdate = false;
 
     // Geometry
-    this.geometry = new THREE.PlaneBufferGeometry(4, 4, 10, 10);
-
+    this.geometry = new THREE.PlaneBufferGeometry(15, 15, 10, 10);
+    this.container.position.set(0, 0, 10);
     // Material
     this.material = new THREE.MeshPhongMaterial({ color: 0x2194ce });
 

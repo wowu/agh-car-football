@@ -16,7 +16,57 @@ var initScene,
   vehicle_body,
   vehicle,
   loader,
-  config;
+  config,
+  input ;
+
+var car1 = {}
+vehicle = [undefined, undefined]
+input = [undefined, undefined]
+
+var Axis = function (matrix,axis)
+{
+  return new THREE.Vector3(matrix.elements[4*axis],matrix.elements[4*axis+1],matrix.elements[4*axis+2]);
+}
+
+let setVehicle = function (car, number) {
+    if (vehicle[number]) {
+      scene.remove(vehicle[number])
+    }
+    var mesh = new Physijs.BoxMesh(car.load_car, new THREE.MeshFaceMaterial(car.load_car_materials));
+    mesh.position.y = 2;
+    mesh.castShadow = mesh.receiveShadow = true;
+
+    vehicle[number] = new Physijs.Vehicle(
+      mesh,
+      new Physijs.VehicleTuning(config.suspension_stiffness,
+        config.suspension_compression,
+        config.suspension_damping,
+        config.max_suspension_travel,
+        config.fraction_slip,
+        config.max_suspension_force)
+    );
+    // if(number === 0){
+    //   vehicle[0].position.set(50,50, 50);
+    // }
+    scene.add(vehicle[number]);
+    var wheel_material = new THREE.MeshFaceMaterial(car.load_wheel_materials);
+
+    for (var i = 0; i < 4; i++) {
+      vehicle[number].addWheel(
+        car.load_wheel,
+        wheel_material,
+        new THREE.Vector3(i % 2 === 0 ? -1.6 : 1.6, -1, i < 2 ? 3.3 : -3.2),
+        new THREE.Vector3(0, -1, 0),
+        new THREE.Vector3(-1, 0, 0),
+        0.5,
+        0.7,
+        i < 2 ? false : true
+      );
+    }
+
+
+
+}
 
 initScene = function () {
   renderer = new THREE.WebGLRenderer({ antialias: false });
@@ -41,27 +91,41 @@ initScene = function () {
   scene = new Physijs.Scene();
   scene.setGravity(new THREE.Vector3(0, -30, 0));
   scene.addEventListener('update', function () {
-    if (input && vehicle) {
-      if (input.direction !== null) {
-        input.steering += input.direction / 50;
-        if (input.steering < -0.6) input.steering = -0.6;
-        if (input.steering > 0.6) input.steering = 0.6;
-      }
-      vehicle.setSteering(input.steering, 0);
-      vehicle.setSteering(input.steering, 1);
+    for (var i = 0; i < 2; i++) {
+      if (input[i] ){
+        if(vehicle[i]) {
 
-      if (input.power === true) {
-        vehicle.applyEngineForce(300);
-      } else if (input.power === false) {
-        vehicle.setBrake(20, 2);
-        vehicle.setBrake(20, 3);
-      } else {
-        vehicle.applyEngineForce(0);
+          var direction = Axis(vehicle[i].mesh.matrixWorld, 2);
+          var linVelocity = vehicle[i].mesh.getLinearVelocity();
+          var directionalSpeed = direction.dot(linVelocity);
+
+          if (input[i].direction !== null) {
+            input[i].steering += input[i].direction / 50;
+            if (input[i].steering < -0.6) input[i].steering = -0.6;
+            if (input[i].steering > 0.6) input[i].steering = 0.6;
+          } else {
+            input[i].steering *= 0.9;
+          }
+          vehicle[i].setSteering(input[i].steering, 0);
+          vehicle[i].setSteering(input[i].steering, 1);
+
+          // vehicle.setSteering(input.steering, 4);
+          // vehicle.setSteering(input.steering, 5);
+
+          if (input[i].power === true) {
+            vehicle[i].applyEngineForce(config.power / (1 + Math.max(0.0, directionalSpeed) * 0.1));
+          } else if (input[i].power === false) {
+            vehicle[i].setBrake(20, 2);
+            vehicle[i].setBrake(20, 3);
+          } else {
+            vehicle[i].applyEngineForce(0);
+          }
+        }
       }
+
+      scene.simulate(undefined, 2);
+      physics_stats.update();
     }
-
-    scene.simulate(undefined, 2);
-    physics_stats.update();
   });
 
   camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 1000);
@@ -83,7 +147,6 @@ initScene = function () {
   // light.shadowDarkness = 0.7;
   scene.add(light);
 
-  var input;
 
   // Loader
   loader = new THREE.TextureLoader();
@@ -102,7 +165,7 @@ initScene = function () {
   // Ground
   var NoiseGen = new SimplexNoise();
 
-  var ground_geometry = new THREE.PlaneGeometry(300, 300, 100, 100);
+  var ground_geometry = new THREE.PlaneGeometry(300, 300, 1, 1);
   for (var i = 0; i < ground_geometry.vertices.length; i++) {
     var vertex = ground_geometry.vertices[i];
     // vertex.y = NoiseGen.noise( vertex.x / 30, vertex.z / 30 ) * 1;
@@ -125,53 +188,58 @@ initScene = function () {
 
   json_loader.load('models/mustang.json', function (car, car_materials) {
     json_loader.load('models/mustang_wheel.json', function (wheel, wheel_materials) {
-      var mesh = new Physijs.BoxMesh(car, new THREE.MeshFaceMaterial(car_materials));
-      mesh.position.y = 2;
-      mesh.castShadow = mesh.receiveShadow = true;
 
-      vehicle = new Physijs.Vehicle(
-        mesh,
-        new Physijs.VehicleTuning(10.88, 1.83, 0.28, 500, 10.5, 6000)
-      );
-      scene.add(vehicle);
+      car1.load_car = car;
+      car1.load_car_materials = car_materials;
+      car1.load_wheel = wheel;
+      car1.load_wheel_materials = wheel_materials;
 
-      var wheel_material = new THREE.MeshFaceMaterial(wheel_materials);
+      setVehicle(car1, 0);
+      setVehicle(car1, 1);
 
-      for (var i = 0; i < 4; i++) {
-        vehicle.addWheel(
-          wheel,
-          wheel_material,
-          new THREE.Vector3(i % 2 === 0 ? -1.6 : 1.6, -1, i < 2 ? 3.3 : -3.2),
-          new THREE.Vector3(0, -1, 0),
-          new THREE.Vector3(-1, 0, 0),
-          0.5,
-          0.7,
-          i < 2 ? false : true
-        );
-      }
 
-      input = {
+      input = [{
         power: null,
         direction: null,
         steering: 0,
-      };
+      }, {
+        power: null,
+        direction: null,
+        steering: 0,
+      }];
 
       document.addEventListener('keydown', function (ev) {
         switch (ev.keyCode) {
           case 37: // left
-            input.direction = 1;
+            input[0].direction = 1;
             break;
 
           case 38: // forward
-            input.power = true;
+            input[0].power = true;
             break;
 
           case 39: // right
-            input.direction = -1;
+            input[0].direction = -1;
             break;
 
           case 40: // back
-            input.power = false;
+            input[0].power = false;
+            break;
+
+          case 65: // left
+            input[1].direction = 1;
+            break;
+
+          case 87: // forward
+            input[1].power = true;
+            break;
+
+          case 68: // right
+            input[1].direction = -1;
+            break;
+
+          case 83: // back
+            input[1].power = false;
             break;
         }
       });
@@ -179,19 +247,41 @@ initScene = function () {
       document.addEventListener('keyup', function (ev) {
         switch (ev.keyCode) {
           case 37: // left
-            input.direction = null;
+            input[0].direction = null;
             break;
 
           case 38: // forward
-            input.power = null;
+            input[0].power = null;
             break;
 
           case 39: // right
-            input.direction = null;
+            input[0].direction = null;
             break;
 
           case 40: // back
-            input.power = null;
+            input[0].power = null;
+            break;
+          case 82: // R
+            if (vehicle) {
+              setVehicle(car1, 0)
+              setVehicle(car1, 1)
+            }
+            break;
+
+          case 65: // left
+            input[1].direction = null;
+            break;
+
+          case 87: // forward
+            input[1].power = null;
+            break;
+
+          case 68: // right
+            input[1].direction = null;
+            break;
+
+          case 83: // back
+            input[1].power = null;
             break;
         }
       });
@@ -202,9 +292,23 @@ initScene = function () {
   const folder = gui.addFolder('General');
   folder.open();
 
-  config = { sample: 50 };
+  config = {
+    power: 500,
+    suspension_stiffness: 10.88,
+    suspension_compression: 1.83,
+    suspension_damping: 0.28,
+    max_suspension_travel: 500,
+    fraction_slip: 10.5,
+    max_suspension_force: 6000,
+  };
 
-  folder.add(config, 'sample', 0, 100);
+  folder.add(config, 'power', 300, 5000);
+  folder.add(config, 'suspension_stiffness', 1, 100);
+  folder.add(config, 'suspension_compression', 0.01, 5);
+  folder.add(config, 'suspension_damping', 0.01, 3);
+  folder.add(config, 'max_suspension_travel', 100, 5000);
+  folder.add(config, 'fraction_slip', 1, 100);
+  folder.add(config, 'max_suspension_force', 1000, 20000);
 
   requestAnimationFrame(render);
   scene.simulate();
@@ -213,13 +317,14 @@ initScene = function () {
 render = function () {
   requestAnimationFrame(render);
 
-  if (vehicle) {
-    camera.position.copy(vehicle.mesh.position).add(new THREE.Vector3(40, 25, 40));
-    camera.lookAt(vehicle.mesh.position);
-
+  if (vehicle[0] && vehicle[1] ) {
+    camera.position.copy(vehicle[0].mesh.position.clone().add(vehicle[1].mesh.position).divideScalar(2.0)).add(new THREE.Vector3(40, 25, 40));
+    camera.lookAt(vehicle[0].mesh.position.clone().add(vehicle[1].mesh.position).divideScalar(2.0));
+    // camera.lookAt(vehicle[0].mesh.position);
     // light.target.position.copy(vehicle.mesh.position);
     // light.position.addVectors(light.target.position, new THREE.Vector3(20, 20, -15));
   }
+
 
   renderer.render(scene, camera);
   render_stats.update();

@@ -6,7 +6,6 @@ Physijs.scripts.ammo = 'ammo.js';
 var initScene,
   render,
   ground_material,
-  box_material,
   renderer,
   render_stats,
   physics_stats,
@@ -100,16 +99,6 @@ initScene = function () {
   ground_material.map.wrapS = ground_material.map.wrapT = THREE.RepeatWrapping;
   ground_material.map.repeat.set(3, 3);
 
-  box_material = Physijs.createMaterial(
-    new THREE.MeshLambertMaterial({
-      map: loader.load('images/plywood.jpg'),
-    }),
-    0.4, // low friction
-    0.6 // high restitution
-  );
-  box_material.map.wrapS = ground_material.map.wrapT = THREE.RepeatWrapping;
-  box_material.map.repeat.set(0.25, 0.25);
-
   // Ground
   var NoiseGen = new SimplexNoise();
 
@@ -131,14 +120,6 @@ initScene = function () {
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   scene.add(ground);
-
-  for (i = 0; i < 50; i++) {
-    var size = Math.random() * 2 + 0.5;
-    var box = new Physijs.BoxMesh(new THREE.BoxGeometry(size, size, size), box_material);
-    box.castShadow = box.receiveShadow = true;
-    box.position.set(Math.random() * 25 - 50, 5, Math.random() * 25 - 50);
-    scene.add(box);
-  }
 
   var json_loader = new THREE.JSONLoader();
 

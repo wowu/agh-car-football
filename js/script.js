@@ -19,9 +19,7 @@ var initScene,
   loader;
 
 initScene = function () {
-  renderer = new THREE.WebGLRenderer({
-    antialias: false,
-  });
+  renderer = new THREE.WebGLRenderer({ antialias: false });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMapSoft = true;
@@ -29,13 +27,14 @@ initScene = function () {
 
   render_stats = new Stats();
   render_stats.domElement.style.position = 'absolute';
-  render_stats.domElement.style.top = '1px';
+  render_stats.domElement.style.top = '0';
   render_stats.domElement.style.zIndex = 100;
   document.getElementById('viewport').appendChild(render_stats.domElement);
 
   physics_stats = new Stats();
   physics_stats.domElement.style.position = 'absolute';
-  physics_stats.domElement.style.top = '50px';
+  physics_stats.domElement.style.top = '0';
+  physics_stats.domElement.style.left = '80px';
   physics_stats.domElement.style.zIndex = 100;
   document.getElementById('viewport').appendChild(physics_stats.domElement);
 
@@ -174,6 +173,7 @@ initScene = function () {
         direction: null,
         steering: 0,
       };
+
       document.addEventListener('keydown', function (ev) {
         switch (ev.keyCode) {
           case 37: // left
@@ -193,6 +193,7 @@ initScene = function () {
             break;
         }
       });
+
       document.addEventListener('keyup', function (ev) {
         switch (ev.keyCode) {
           case 37: // left
@@ -221,6 +222,7 @@ initScene = function () {
 
 render = function () {
   requestAnimationFrame(render);
+
   if (vehicle) {
     camera.position.copy(vehicle.mesh.position).add(new THREE.Vector3(40, 25, 40));
     camera.lookAt(vehicle.mesh.position);
@@ -228,6 +230,7 @@ render = function () {
     light.target.position.copy(vehicle.mesh.position);
     light.position.addVectors(light.target.position, new THREE.Vector3(20, 20, -15));
   }
+
   renderer.render(scene, camera);
   render_stats.update();
 };

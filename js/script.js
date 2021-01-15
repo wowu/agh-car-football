@@ -17,62 +17,72 @@ var initScene,
   vehicle,
   loader,
   config,
-  input ;
+  input;
 
-var car1 = {}
-vehicle = [undefined, undefined]
-input = [undefined, undefined]
+var primaryCar = {},
+  secondaryCar = {};
 
-var Axis = function (matrix,axis)
-{
-  return new THREE.Vector3(matrix.elements[4*axis],matrix.elements[4*axis+1],matrix.elements[4*axis+2]);
-}
+vehicle = [undefined, undefined];
+input = [undefined, undefined];
 
-let resetVehicle = function(number){
-  vehicle[number].mesh.position.set(20*number, 2, 0);
+var Axis = function (matrix, axis) {
+  return new THREE.Vector3(
+    matrix.elements[4 * axis],
+    matrix.elements[4 * axis + 1],
+    matrix.elements[4 * axis + 2]
+  );
+};
+
+let resetVehicle = function (number) {
+  vehicle[number].mesh.position.set(20 * number, 2, 0);
   vehicle[number].mesh.__dirtyPosition = true;
-  vehicle[number].mesh.rotation.set(0,0,0);
+  vehicle[number].mesh.rotation.set(0, 0, 0);
   vehicle[number].mesh.__dirtyRotation = true;
-}
+};
 
 let setVehicle = function (car, number) {
-    if (vehicle[number]) {
-      scene.remove(vehicle[number])
-    }
-    var mesh = new Physijs.BoxMesh(car.load_car, new THREE.MeshFaceMaterial(car.load_car_materials));
-    mesh.position.y = 2;
-    mesh.position.x = number*20;
-    mesh.castShadow = mesh.receiveShadow = true;
+  car.load_car.translate(0, -0.9, 0);
+  car.load_car.scale(1.4, 1.4, 1.4);
 
-    vehicle[number] = new Physijs.Vehicle(
-      mesh,
-      new Physijs.VehicleTuning(config.suspension_stiffness,
-        config.suspension_compression,
-        config.suspension_damping,
-        config.max_suspension_travel,
-        config.fraction_slip,
-        config.max_suspension_force)
+  if (vehicle[number]) {
+    scene.remove(vehicle[number]);
+  }
+
+  var mesh = new Physijs.BoxMesh(car.load_car, new THREE.MeshFaceMaterial(car.load_car_materials));
+  mesh.position.y = 2;
+  mesh.position.x = number * 20;
+  mesh.castShadow = mesh.receiveShadow = true;
+
+  vehicle[number] = new Physijs.Vehicle(
+    mesh,
+    new Physijs.VehicleTuning(
+      config.suspension_stiffness,
+      config.suspension_compression,
+      config.suspension_damping,
+      config.max_suspension_travel,
+      config.fraction_slip,
+      config.max_suspension_force
+    )
+  );
+  scene.add(vehicle[number]);
+
+  var wheel_material = new THREE.MeshFaceMaterial(car.load_wheel_materials);
+
+  const otherWheel = car.load_wheel.clone().rotateY(Math.PI);
+
+  for (var i = 0; i < 4; i++) {
+    vehicle[number].addWheel(
+      i % 2 === 0 ? car.load_wheel : otherWheel,
+      wheel_material,
+      new THREE.Vector3(i % 2 === 0 ? -1.6 : 1.6, -1, i < 2 ? 2.865 : -2.5),
+      new THREE.Vector3(0, -1, 0),
+      new THREE.Vector3(-1, 0, 0),
+      0.5,
+      0.7,
+      i < 2 ? false : true
     );
-
-    scene.add(vehicle[number]);
-    var wheel_material = new THREE.MeshFaceMaterial(car.load_wheel_materials);
-
-    for (var i = 0; i < 4; i++) {
-      vehicle[number].addWheel(
-        car.load_wheel,
-        wheel_material,
-        new THREE.Vector3(i % 2 === 0 ? -1.6 : 1.6, -1, i < 2 ? 3.3 : -3.2),
-        new THREE.Vector3(0, -1, 0),
-        new THREE.Vector3(-1, 0, 0),
-        0.5,
-        0.7,
-        i < 2 ? false : true
-      );
-    }
-
-
-
-}
+  }
+};
 
 initScene = function () {
   renderer = new THREE.WebGLRenderer({ antialias: false });
@@ -98,9 +108,8 @@ initScene = function () {
   scene.setGravity(new THREE.Vector3(0, -30, 0));
   scene.addEventListener('update', function () {
     for (var i = 0; i < 2; i++) {
-      if (input[i] ){
-        if(vehicle[i]) {
-
+      if (input[i]) {
+        if (vehicle[i]) {
           var direction = Axis(vehicle[i].mesh.matrixWorld, 2);
           var linVelocity = vehicle[i].mesh.getLinearVelocity();
           var directionalSpeed = direction.dot(linVelocity);
@@ -121,10 +130,12 @@ initScene = function () {
           if (input[i].power === true && input[i].forward === true) {
             vehicle[i].applyEngineForce(config.power / (1 + Math.max(0.0, directionalSpeed) * 0.1));
           } else if (input[i].power === true && input[i].forward === false) {
-            vehicle[i].applyEngineForce(-config.power*0.95 / (1 + Math.max(0.0, directionalSpeed) * 0.1));
-          // } else if (input[i].power === false) {
-          //   vehicle[i].setBrake(20, 2);
-          //   vehicle[i].setBrake(20, 3);
+            vehicle[i].applyEngineForce(
+              (-config.power * 0.95) / (1 + Math.max(0.0, directionalSpeed) * 0.1)
+            );
+            // } else if (input[i].power === false) {
+            //   vehicle[i].setBrake(20, 2);
+            //   vehicle[i].setBrake(20, 3);
           } else {
             vehicle[i].applyEngineForce(0);
           }
@@ -140,7 +151,7 @@ initScene = function () {
   scene.add(camera);
 
   // Light
-  light = new THREE.HemisphereLight(0xffffbb, 0x080820, 1 );
+  light = new THREE.HemisphereLight(0xffffbb, 0x080820, 1);
   // light.position.set(20, 20, -15);
   // light.target.position.copy(scene.position);
   // light.castShadow = true;
@@ -154,7 +165,6 @@ initScene = function () {
   // light.shadowMapWidth = light.shadowMapHeight = 2048;
   // light.shadowDarkness = 0.7;
   scene.add(light);
-
 
   // Loader
   loader = new THREE.TextureLoader();
@@ -174,10 +184,6 @@ initScene = function () {
   var NoiseGen = new SimplexNoise();
 
   var ground_geometry = new THREE.PlaneGeometry(300, 300, 1, 1);
-  for (var i = 0; i < ground_geometry.vertices.length; i++) {
-    var vertex = ground_geometry.vertices[i];
-    // vertex.y = NoiseGen.noise( vertex.x / 30, vertex.z / 30 ) * 1;
-  }
   ground_geometry.computeFaceNormals();
   ground_geometry.computeVertexNormals();
 
@@ -192,116 +198,124 @@ initScene = function () {
   ground.receiveShadow = true;
   scene.add(ground);
 
-  var json_loader = new THREE.JSONLoader();
+  const json_loader = new THREE.JSONLoader();
 
-  json_loader.load('models/mustang.json', function (car, car_materials) {
-    json_loader.load('models/mustang_wheel.json', function (wheel, wheel_materials) {
+  json_loader.load('models/car1.json', function (car1, car1_materials) {
+    json_loader.load('models/car2.json', function (car2, car2_materials) {
+      json_loader.load('models/mustang_wheel.json', function (wheel, wheel_materials) {
+        primaryCar.load_car = car1;
+        primaryCar.load_car_materials = car1_materials;
+        primaryCar.load_wheel = wheel;
+        primaryCar.load_wheel_materials = wheel_materials;
 
-      car1.load_car = car;
-      car1.load_car_materials = car_materials;
-      car1.load_wheel = wheel;
-      car1.load_wheel_materials = wheel_materials;
+        secondaryCar.load_car = car2;
+        secondaryCar.load_car_materials = car2_materials;
+        secondaryCar.load_wheel = wheel;
+        secondaryCar.load_wheel_materials = wheel_materials;
 
-      setVehicle(car1, 0);
-      setVehicle(car1, 1);
+        setVehicle(primaryCar, 0);
+        setVehicle(secondaryCar, 1);
 
+        input = [
+          {
+            power: null,
+            direction: null,
+            steering: 0,
+            forward: true,
+          },
+          {
+            power: null,
+            direction: null,
+            steering: 0,
+            forward: true,
+          },
+        ];
 
-      input = [{
-        power: null,
-        direction: null,
-        steering: 0,
-        forward: true,
-      }, {
-        power: null,
-        direction: null,
-        steering: 0,
-        forward: true,
-      }];
+        document.addEventListener('keydown', function (ev) {
+          switch (ev.keyCode) {
+            case 37: // left
+              input[0].direction = 1;
+              break;
 
-      document.addEventListener('keydown', function (ev) {
-        switch (ev.keyCode) {
-          case 37: // left
-            input[0].direction = 1;
-            break;
+            case 38: // forward
+              input[0].power = true;
+              input[0].forward = true;
+              break;
 
-          case 38: // forward
-            input[0].power = true;
-            input[0].forward = true;
-            break;
+            case 39: // right
+              input[0].direction = -1;
+              break;
 
-          case 39: // right
-            input[0].direction = -1;
-            break;
+            case 40: // back
+              input[0].power = true;
+              input[0].forward = false;
+              break;
 
-          case 40: // back
-            input[0].power = true;
-            input[0].forward = false;
-            break;
+            case 65: // left
+              input[1].direction = 1;
+              break;
 
-          case 65: // left
-            input[1].direction = 1;
-            break;
+            case 87: // forward
+              input[1].power = true;
+              input[1].forward = true;
+              break;
 
-          case 87: // forward
-            input[1].power = true;
-            input[1].forward = true;
-            break;
+            case 68: // right
+              input[1].direction = -1;
+              break;
 
-          case 68: // right
-            input[1].direction = -1;
-            break;
+            case 83: // back
+              input[1].power = true;
+              input[1].forward = false;
+              break;
+          }
+        });
 
-          case 83: // back
-            input[1].power = true;
-            input[1].forward = false;
-            break;
-        }
-      });
+        document.addEventListener('keyup', function (ev) {
+          switch (ev.keyCode) {
+            case 37: // left
+              input[0].direction = null;
+              break;
 
-      document.addEventListener('keyup', function (ev) {
-        switch (ev.keyCode) {
-          case 37: // left
-            input[0].direction = null;
-            break;
+            case 38: // forward
+              input[0].power = false;
+              break;
 
-          case 38: // forward
-            input[0].power = false;
-            break;
+            case 39: // right
+              input[0].direction = null;
+              break;
 
-          case 39: // right
-            input[0].direction = null;
-            break;
+            case 40: // back
+              input[0].power = false;
+              break;
+            case 49: // 1
+              if (vehicle[0]) {
+                resetVehicle(0);
+              }
+              break;
+            case 50: // T
+              if (vehicle[1]) {
+                resetVehicle(1);
+              }
+              break;
 
-          case 40: // back
-            input[0].power = false;
-            break;
-          case 49: // 1
-            if (vehicle[0]) {
-              resetVehicle(0)
-            }
-            break;
-          case 50: // T
-            if (vehicle[1]) {
-              resetVehicle(1)
-            }
-            break;
+            case 65: // left
+              input[1].direction = null;
+              break;
 
-          case 65: // left
-            input[1].direction = null;
-            break;
+            case 87: // forward
+              input[1].power = false;
+              break;
 
-          case 87: // forward
-            input[1].power = false;
-            break;
+            case 68: // right
+              input[1].direction = null;
+              break;
 
-          case 68: // right
-            input[1].direction = null;
-            break;
-
-          case 83: // back
-            input[1].power = false;
-            break;
-        }
+            case 83: // back
+              input[1].power = false;
+              break;
+          }
+        });
       });
     });
   });
@@ -311,7 +325,7 @@ initScene = function () {
   folder.open();
 
   config = {
-    power: 500,
+    power: 5000,
     suspension_stiffness: 10.88,
     suspension_compression: 1.83,
     suspension_damping: 0.28,
@@ -320,7 +334,7 @@ initScene = function () {
     max_suspension_force: 6000,
   };
 
-  folder.add(config, 'power', 300, 5000);
+  folder.add(config, 'power', 1000, 50000);
   // folder.add(config, 'suspension_stiffness', 1, 100);
   // folder.add(config, 'suspension_compression', 0.01, 5);
   // folder.add(config, 'suspension_damping', 0.01, 3);
@@ -335,15 +349,16 @@ initScene = function () {
 render = function () {
   requestAnimationFrame(render);
 
-  if (vehicle[0] && vehicle[1] ) {
-    var distance = vehicle[0].mesh.position.distanceTo(vehicle[1].mesh.position)
-    camera.position.copy(vehicle[0].mesh.position.clone().add(vehicle[0].mesh.position).divideScalar(2.0)).add(new THREE.Vector3(40, 50+distance*0.3, 40));
+  if (vehicle[0] && vehicle[1]) {
+    var distance = vehicle[0].mesh.position.distanceTo(vehicle[1].mesh.position);
+    camera.position
+      .copy(vehicle[0].mesh.position.clone().add(vehicle[0].mesh.position).divideScalar(2.0))
+      .add(new THREE.Vector3(40, 50 + distance * 0.3, 40));
     camera.lookAt(vehicle[0].mesh.position.clone().add(vehicle[1].mesh.position).divideScalar(2.0));
     // camera.lookAt(vehicle[0].mesh.position);
     // light.target.position.copy(vehicle.mesh.position);
     // light.position.addVectors(light.target.position, new THREE.Vector3(20, 20, -15));
   }
-
 
   renderer.render(scene, camera);
   render_stats.update();

@@ -28,12 +28,20 @@ var Axis = function (matrix,axis)
   return new THREE.Vector3(matrix.elements[4*axis],matrix.elements[4*axis+1],matrix.elements[4*axis+2]);
 }
 
+let resetVehicle = function(number){
+  vehicle[number].mesh.position.set(20*number, 2, 0);
+  vehicle[number].mesh.__dirtyPosition = true;
+  vehicle[number].mesh.rotation.set(0,0,0);
+  vehicle[number].mesh.__dirtyRotation = true;
+}
+
 let setVehicle = function (car, number) {
     if (vehicle[number]) {
       scene.remove(vehicle[number])
     }
     var mesh = new Physijs.BoxMesh(car.load_car, new THREE.MeshFaceMaterial(car.load_car_materials));
     mesh.position.y = 2;
+    mesh.position.x = number*20;
     mesh.castShadow = mesh.receiveShadow = true;
 
     vehicle[number] = new Physijs.Vehicle(
@@ -45,9 +53,7 @@ let setVehicle = function (car, number) {
         config.fraction_slip,
         config.max_suspension_force)
     );
-    // if(number === 0){
-    //   vehicle[0].position.set(50,50, 50);
-    // }
+
     scene.add(vehicle[number]);
     var wheel_material = new THREE.MeshFaceMaterial(car.load_wheel_materials);
 
@@ -112,11 +118,13 @@ initScene = function () {
           // vehicle.setSteering(input.steering, 4);
           // vehicle.setSteering(input.steering, 5);
 
-          if (input[i].power === true) {
+          if (input[i].power === true && input[i].forward === true) {
             vehicle[i].applyEngineForce(config.power / (1 + Math.max(0.0, directionalSpeed) * 0.1));
-          } else if (input[i].power === false) {
-            vehicle[i].setBrake(20, 2);
-            vehicle[i].setBrake(20, 3);
+          } else if (input[i].power === true && input[i].forward === false) {
+            vehicle[i].applyEngineForce(-config.power*0.95 / (1 + Math.max(0.0, directionalSpeed) * 0.1));
+          // } else if (input[i].power === false) {
+          //   vehicle[i].setBrake(20, 2);
+          //   vehicle[i].setBrake(20, 3);
           } else {
             vehicle[i].applyEngineForce(0);
           }
@@ -202,10 +210,12 @@ initScene = function () {
         power: null,
         direction: null,
         steering: 0,
+        forward: true,
       }, {
         power: null,
         direction: null,
         steering: 0,
+        forward: true,
       }];
 
       document.addEventListener('keydown', function (ev) {
@@ -216,6 +226,7 @@ initScene = function () {
 
           case 38: // forward
             input[0].power = true;
+            input[0].forward = true;
             break;
 
           case 39: // right
@@ -223,7 +234,8 @@ initScene = function () {
             break;
 
           case 40: // back
-            input[0].power = false;
+            input[0].power = true;
+            input[0].forward = false;
             break;
 
           case 65: // left
@@ -232,6 +244,7 @@ initScene = function () {
 
           case 87: // forward
             input[1].power = true;
+            input[1].forward = true;
             break;
 
           case 68: // right
@@ -239,7 +252,8 @@ initScene = function () {
             break;
 
           case 83: // back
-            input[1].power = false;
+            input[1].power = true;
+            input[1].forward = false;
             break;
         }
       });
@@ -251,7 +265,7 @@ initScene = function () {
             break;
 
           case 38: // forward
-            input[0].power = null;
+            input[0].power = false;
             break;
 
           case 39: // right
@@ -259,12 +273,16 @@ initScene = function () {
             break;
 
           case 40: // back
-            input[0].power = null;
+            input[0].power = false;
             break;
-          case 82: // R
-            if (vehicle) {
-              setVehicle(car1, 0)
-              setVehicle(car1, 1)
+          case 49: // 1
+            if (vehicle[0]) {
+              resetVehicle(0)
+            }
+            break;
+          case 50: // T
+            if (vehicle[1]) {
+              resetVehicle(1)
             }
             break;
 
@@ -273,7 +291,7 @@ initScene = function () {
             break;
 
           case 87: // forward
-            input[1].power = null;
+            input[1].power = false;
             break;
 
           case 68: // right
@@ -281,7 +299,7 @@ initScene = function () {
             break;
 
           case 83: // back
-            input[1].power = null;
+            input[1].power = false;
             break;
         }
       });
@@ -303,12 +321,12 @@ initScene = function () {
   };
 
   folder.add(config, 'power', 300, 5000);
-  folder.add(config, 'suspension_stiffness', 1, 100);
-  folder.add(config, 'suspension_compression', 0.01, 5);
-  folder.add(config, 'suspension_damping', 0.01, 3);
-  folder.add(config, 'max_suspension_travel', 100, 5000);
-  folder.add(config, 'fraction_slip', 1, 100);
-  folder.add(config, 'max_suspension_force', 1000, 20000);
+  // folder.add(config, 'suspension_stiffness', 1, 100);
+  // folder.add(config, 'suspension_compression', 0.01, 5);
+  // folder.add(config, 'suspension_damping', 0.01, 3);
+  // folder.add(config, 'max_suspension_travel', 100, 5000);
+  // folder.add(config, 'fraction_slip', 1, 100);
+  // folder.add(config, 'max_suspension_force', 1000, 20000);
 
   requestAnimationFrame(render);
   scene.simulate();
@@ -318,7 +336,8 @@ render = function () {
   requestAnimationFrame(render);
 
   if (vehicle[0] && vehicle[1] ) {
-    camera.position.copy(vehicle[0].mesh.position.clone().add(vehicle[1].mesh.position).divideScalar(2.0)).add(new THREE.Vector3(40, 25, 40));
+    var distance = vehicle[0].mesh.position.distanceTo(vehicle[1].mesh.position)
+    camera.position.copy(vehicle[0].mesh.position.clone().add(vehicle[0].mesh.position).divideScalar(2.0)).add(new THREE.Vector3(40, 50+distance*0.3, 40));
     camera.lookAt(vehicle[0].mesh.position.clone().add(vehicle[1].mesh.position).divideScalar(2.0));
     // camera.lookAt(vehicle[0].mesh.position);
     // light.target.position.copy(vehicle.mesh.position);

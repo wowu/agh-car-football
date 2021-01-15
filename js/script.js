@@ -16,7 +16,8 @@ var initScene,
   camera,
   vehicle_body,
   vehicle,
-  loader;
+  loader,
+  config;
 
 initScene = function () {
   renderer = new THREE.WebGLRenderer({ antialias: false });
@@ -115,7 +116,7 @@ initScene = function () {
   var ground_geometry = new THREE.PlaneGeometry(300, 300, 100, 100);
   for (var i = 0; i < ground_geometry.vertices.length; i++) {
     var vertex = ground_geometry.vertices[i];
-    //vertex.y = NoiseGen.noise( vertex.x / 30, vertex.z / 30 ) * 1;
+    // vertex.y = NoiseGen.noise( vertex.x / 30, vertex.z / 30 ) * 1;
   }
   ground_geometry.computeFaceNormals();
   ground_geometry.computeVertexNormals();
@@ -215,6 +216,14 @@ initScene = function () {
       });
     });
   });
+
+  const gui = new dat.GUI();
+  const folder = gui.addFolder('General');
+  folder.open();
+
+  config = { sample: 50 };
+
+  folder.add(config, 'sample', 0, 100);
 
   requestAnimationFrame(render);
   scene.simulate();

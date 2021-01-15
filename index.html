@@ -3,15 +3,8 @@
 
 <head>
   <title>Racing game</title>
-
   <link rel="stylesheet" type="text/css" href="css/styles.css" />
-
-  <script type="text/javascript" src="vendor/three.min.js"></script>
-  <script type="text/javascript" src="vendor/stats.js"></script>
-  <script type="text/javascript" src="vendor/simplex-noise.js"></script>
-  <script type="text/javascript" src="vendor/physi.js"></script>
-
-  <script type="text/javascript" src="js/script.js"></script>
+  <link rel="stylesheet" type="text/css" href="vendor/dat.gui.css" />
 </head>
 
 <body>
@@ -20,6 +13,20 @@
   </div>
 
   <div id="viewport"></div>
+
+  <script type="text/javascript" src="vendor/three.min.js"></script>
+  <script type="text/javascript" src="vendor/stats.js"></script>
+  <script type="text/javascript" src="vendor/simplex-noise.js"></script>
+  <script type="text/javascript" src="vendor/physi.js"></script>
+  <script type="text/javascript" src="vendor/dat.gui.min.js"></script>
+
+  <script type="text/javascript" src="js/script.js"></script>
+
+  <script>
+    document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] +
+      ':35729/livereload.js?snipver=1"></' + 'script>');
+
+  </script>
 </body>
 
 </html>

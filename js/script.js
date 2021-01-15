@@ -68,19 +68,19 @@ initScene = function () {
   scene.add(camera);
 
   // Light
-  light = new THREE.DirectionalLight(0xffffff);
-  light.position.set(20, 20, -15);
-  light.target.position.copy(scene.position);
-  light.castShadow = true;
-  light.shadowCameraLeft = -150;
-  light.shadowCameraTop = -150;
-  light.shadowCameraRight = 150;
-  light.shadowCameraBottom = 150;
-  light.shadowCameraNear = 20;
-  light.shadowCameraFar = 400;
-  light.shadowBias = -0.0001;
-  light.shadowMapWidth = light.shadowMapHeight = 2048;
-  light.shadowDarkness = 0.7;
+  light = new THREE.HemisphereLight(0xffffbb, 0x080820, 1 );
+  // light.position.set(20, 20, -15);
+  // light.target.position.copy(scene.position);
+  // light.castShadow = true;
+  // light.shadowCameraLeft = -1500;
+  // light.shadowCameraTop = -1500;
+  // light.shadowCameraRight = 1500;
+  // light.shadowCameraBottom = 1500;
+  // light.shadowCameraNear = 20;
+  // light.shadowCameraFar = 400;
+  // light.shadowBias = -0.0001;
+  // light.shadowMapWidth = light.shadowMapHeight = 2048;
+  // light.shadowDarkness = 0.7;
   scene.add(light);
 
   var input;
@@ -217,8 +217,8 @@ render = function () {
     camera.position.copy(vehicle.mesh.position).add(new THREE.Vector3(40, 25, 40));
     camera.lookAt(vehicle.mesh.position);
 
-    light.target.position.copy(vehicle.mesh.position);
-    light.position.addVectors(light.target.position, new THREE.Vector3(20, 20, -15));
+    // light.target.position.copy(vehicle.mesh.position);
+    // light.position.addVectors(light.target.position, new THREE.Vector3(20, 20, -15));
   }
 
   renderer.render(scene, camera);

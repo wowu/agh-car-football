@@ -25,12 +25,11 @@ var initScene,
 
 var primaryCar = {},
   secondaryCar = {};
-var load_obj = {}
-var points = [0,0]
+var load_obj = {};
+var points = [0, 0];
 
 vehicle = [undefined, undefined];
 input = [undefined, undefined];
-
 
 var Axis = function (matrix, axis) {
   return new THREE.Vector3(
@@ -40,33 +39,35 @@ var Axis = function (matrix, axis) {
   );
 };
 
-
-let resetGame = function(score1 = 0, score2 = 0, clearResults = false){
+let resetGame = function (score1 = 0, score2 = 0, clearResults = false) {
   ball.position.set(0, 30, 0);
   ball.setAngularVelocity(new THREE.Vector3(0, 0, 0));
   ball.setLinearVelocity(new THREE.Vector3(0, 0, 0));
   ball.__dirtyPosition = true;
-  resetVehicle(0, true)
-  resetVehicle(1, true)
+  resetVehicle(0, true);
+  resetVehicle(1, true);
   points[0] += score1;
   points[1] += score2;
-  document.getElementById("result1").innerHTML = points[0]
-  document.getElementById("result2").innerHTML = points[1]
-  if(clearResults){
-    points = [0,0];
+  document.getElementById('result1').innerHTML = points[0];
+  document.getElementById('result2').innerHTML = points[1];
+  if (clearResults) {
+    points = [0, 0];
   }
-}
+};
 
 let resetVehicle = function (number, initialPosition) {
   vehicle[number].mesh.position.y = 5;
   vehicle[number].mesh.setLinearVelocity(new THREE.Vector3(0, 0, 0));
   vehicle[number].mesh.setAngularVelocity(new THREE.Vector3(0, 0, 0));
-  if(initialPosition){
+  if (initialPosition) {
     vehicle[number].mesh.position.x = 0;
-    vehicle[number].mesh.position.z = -20 + number*40;
+    vehicle[number].mesh.position.z = -20 + number * 40;
+    vehicle[number].mesh.rotation.set(0, number === 1 ? Math.PI : 0, 0);
+  } else {
+    vehicle[number].mesh.rotation.x = 0;
+    vehicle[number].mesh.rotation.z = 0;
   }
   vehicle[number].mesh.__dirtyPosition = true;
-  vehicle[number].mesh.rotation.set(0, 0, 0);
   vehicle[number].mesh.__dirtyRotation = true;
 };
 
@@ -102,14 +103,19 @@ let setVehicle = function (car, number) {
     scene.remove(vehicle[number]);
   }
 
-  var mesh = new Physijs.ConvexMesh(load_car, new THREE.MeshFaceMaterial(car.load_car_materials), 50);
-  mesh.position.z = -20 + number*40;
+  var mesh = new Physijs.ConvexMesh(
+    load_car,
+    new THREE.MeshFaceMaterial(car.load_car_materials),
+    50
+  );
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.position.z = -20 + number * 40;
   mesh.position.y = 2;
-  if(number === 1){
-    mesh.rotateY(Math.PI)
+  if (number === 1) {
+    mesh.rotateY(Math.PI);
   }
   mesh.__dirtyPosition = true;
-  mesh.castShadow = mesh.receiveShadow = true;
 
   vehicle[number] = new Physijs.Vehicle(
     mesh,
@@ -122,6 +128,8 @@ let setVehicle = function (car, number) {
       config.max_suspension_force
     )
   );
+
+  vehicle[number].mesh.receiveShadow = true;
   scene.add(vehicle[number]);
 
   var wheel_material = new THREE.MeshFaceMaterial(car.load_wheel_materials);
@@ -211,16 +219,15 @@ initScene = function () {
 
   // var sndlight = new THREE.AmbientLight( 0x333344);
   // var sndlight = new THREE.AmbientLight( 0x434354);
-  var sndlight = new THREE.HemisphereLight("rgb(255,255,240)", "rgb(191,180,153)", 1);
-  scene.add( sndlight );
+  var sndlight = new THREE.HemisphereLight('rgb(255,255,240)', 'rgb(191,180,153)', 1);
+  scene.add(sndlight);
 
   // var light2 = new THREE.DirectionalLight( 0xFFFFFF,0.1 );
   // scene.add( light2 );
 
-
-  light = new THREE.DirectionalLight("rgb(75,75,75)",0.2 );
-  light.position.set( 200, 200, -150 );
-  light.target.position.copy( scene.position );
+  light = new THREE.DirectionalLight('rgb(75,75,75)', 0.2);
+  light.position.set(200, 200, -150);
+  light.target.position.copy(scene.position);
   light.castShadow = true;
   light.shadowCameraLeft = -150;
   light.shadowCameraTop = -150;
@@ -228,10 +235,10 @@ initScene = function () {
   light.shadowCameraBottom = 150;
   light.shadowCameraNear = 20;
   light.shadowCameraFar = 1500;
-  light.shadowBias = -.0001;
-  light.shadowMapWidth = light.shadowMapHeight = 2048;	//no effect?
-  light.shadowDarkness = .7;
-  scene.add( light );
+  light.shadowBias = -0.0001;
+  light.shadowMapWidth = light.shadowMapHeight = 2048; //no effect?
+  light.shadowDarkness = 0.7;
+  scene.add(light);
 
   ball = new Physijs.SphereMesh(
     new THREE.SphereGeometry(3, 12, 12),
@@ -239,7 +246,9 @@ initScene = function () {
     0.5
   );
 
-  ball.position.set(0,30,0)
+  ball.position.set(0, 30, 0);
+  ball.castShadow = true;
+  ball.receiveShadow = true;
   ball.__dirtyPosition = true;
 
   scene.add(ball);
@@ -275,7 +284,6 @@ initScene = function () {
   ground.receiveShadow = true;
   scene.add(ground);
 
-
   json_loader.load('models/oak.json', function (oak_obj, oak_materials) {
     json_loader.load('models/birch.json', function (birch_obj, birch_materials) {
       json_loader.load('models/bumper.json', function (bumper_obj, bumper_materials) {
@@ -295,6 +303,7 @@ initScene = function () {
     const meshObj = new THREE.Mesh(obj, new THREE.MeshFaceMaterial(material));
     meshObj.position.set(pos[0], pos[1], pos[2]);
     meshObj.scale.set(scale, scale, scale);
+    meshObj.castShadow = true;
 
     meshObj.rotation.y = rot;
     //
@@ -308,47 +317,94 @@ initScene = function () {
 
   function placePhysiObj(obj, material, pos, rot = 0, mass = 1, scale = 1, customHeight = 0) {
     const meshObj = new Physijs.BoxMesh(obj, new THREE.MeshFaceMaterial(material), mass);
+    meshObj.castShadow = true;
+    meshObj.receiveShadow = true;
     meshObj.position.set(pos[0], pos[1], pos[2]);
     meshObj.scale.set(scale, scale, scale);
-    if(customHeight !== 0){
+    if (customHeight !== 0) {
       meshObj._physijs.height = customHeight;
     }
 
     meshObj.rotation.y = rot;
 
-
     scene.add(meshObj);
   }
 
   function objectsReady() {
-    placeThreeObj(load_obj.oak_obj, load_obj.oak_materials, [55, 0, -10], Math.random() * 2 * Math.PI, 2);
+    placeThreeObj(load_obj.oak_obj, load_obj.oak_materials, [55, 0, -10], 0.4, 2);
     placeThreeObj(load_obj.oak_obj, load_obj.oak_materials, [-53, 0, 30], 0, 3);
-    placeThreeObj(load_obj.oak_obj, load_obj.oak_materials, [10, 0, 70], Math.random() * 2 * Math.PI, 1.5);
-    placeThreeObj(load_obj.birch_obj, load_obj.birch_materials, [55, 0, 25], Math.random() * 2 * Math.PI, 2.5);
-    placeThreeObj(load_obj.birch_obj, load_obj.birch_materials, [-55, 0, -20], Math.random() * 2 * Math.PI, 2);;
-    placeThreeObj(load_obj.birch_obj, load_obj.birch_materials, [-10, 0, -70], Math.random() * 2 * Math.PI, 3);
-
+    placeThreeObj(load_obj.oak_obj, load_obj.oak_materials, [10, 0, 70], 0.5, 1.5);
+    placeThreeObj(load_obj.birch_obj, load_obj.birch_materials, [55, 0, 25], 0.9, 2.5);
+    placeThreeObj(load_obj.birch_obj, load_obj.birch_materials, [-55, 0, -20], 0.1, 2);
+    placeThreeObj(load_obj.birch_obj, load_obj.birch_materials, [-10, 0, -70], 2.3, 3);
 
     // placeObj(objects.bumper, [10, 0, 0], 0, true);
     for (var i = 0; i < 15; i++) {
-      placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [-40, 2, i * 7 - 50], 0, 0, 3, 1000);
-      placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [40, 2, i * 7 - 50], 0, 0, 3, 1000);
+      placePhysiObj(
+        load_obj.bumper_obj,
+        load_obj.bumper_materials,
+        [-40, 0, i * 7 - 50],
+        0,
+        0,
+        3,
+        1000
+      );
+      placePhysiObj(
+        load_obj.bumper_obj,
+        load_obj.bumper_materials,
+        [40, 0, i * 7 - 50],
+        0,
+        0,
+        3,
+        1000
+      );
     }
 
     for (var i = 0; i < 12; i++) {
-      if(i === 6 ||i ===  5 ){
-        placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [i * 7 - 40, 2, 60], Math.PI * 0.5, 0, 3,1000);
-        placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [i * 7 - 40, 2, -60], Math.PI * 0.5, 0, 3, 1000);
-      }
-      else {
-        placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [i * 7 - 40, 2, 50], Math.PI * 0.5, 0, 3, 1000);
-        placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [i * 7 - 40, 2, -50], Math.PI * 0.5, 0, 3, 1000);
+      if (i === 6 || i === 5) {
+        placePhysiObj(
+          load_obj.bumper_obj,
+          load_obj.bumper_materials,
+          [i * 7 - 40, 0, 60],
+          Math.PI * 0.5,
+          0,
+          3,
+          1000
+        );
+        placePhysiObj(
+          load_obj.bumper_obj,
+          load_obj.bumper_materials,
+          [i * 7 - 40, 0, -60],
+          Math.PI * 0.5,
+          0,
+          3,
+          1000
+        );
+      } else {
+        placePhysiObj(
+          load_obj.bumper_obj,
+          load_obj.bumper_materials,
+          [i * 7 - 40, 0, 50],
+          Math.PI * 0.5,
+          0,
+          3,
+          1000
+        );
+        placePhysiObj(
+          load_obj.bumper_obj,
+          load_obj.bumper_materials,
+          [i * 7 - 40, 0, -50],
+          Math.PI * 0.5,
+          0,
+          3,
+          1000
+        );
       }
     }
-    placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [5, 2, 55], 0, 0, 3, 1000);
-    placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [-10, 2, 55], 0, 0, 3, 1000);
-    placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [5, 2, -55], 0, 0, 3, 1000);
-    placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [-10, 2, -55], 0, 0, 3, 1000);
+    placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [5, 0, 55], 0, 0, 3, 1000);
+    placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [-10, 0, 55], 0, 0, 3, 1000);
+    placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [5, 0, -55], 0, 0, 3, 1000);
+    placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [-10, 0, -55], 0, 0, 3, 1000);
   }
 
   json_loader.load('models/car1.json', function (car1, car1_materials) {
@@ -429,14 +485,14 @@ initScene = function () {
               break;
 
             case 82: // R
-              resetGame(0,0,true)
+              resetGame(0, 0, true);
               break;
 
             case 56: // 8
-              resetGame(1,0,false)
+              resetGame(1, 0, false);
               break;
             case 57: // 8
-              resetGame(0,1,false)
+              resetGame(0, 1, false);
               break;
           }
         });

@@ -77,7 +77,7 @@ let setVehicle = function (car, number) {
     scene.remove(vehicle[number]);
   }
 
-  var mesh = new Physijs.BoxMesh(load_car, new THREE.MeshFaceMaterial(car.load_car_materials));
+  var mesh = new Physijs.ConvexMesh(load_car, new THREE.MeshFaceMaterial(car.load_car_materials));
   mesh.position.y = 2;
   mesh.position.x = number * 20;
   mesh.__dirtyPosition = true;
@@ -115,7 +115,7 @@ let setVehicle = function (car, number) {
 };
 
 initScene = function () {
-  renderer = new THREE.WebGLRenderer({ antialias: false });
+  renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMapSoft = true;
@@ -146,9 +146,9 @@ initScene = function () {
           var directionalSpeed = direction.dot(linVelocity);
 
           if (input[i].direction !== null) {
-            input[i].steering += input[i].direction / 30;
-            if (input[i].steering < -0.6) input[i].steering = -0.8;
-            if (input[i].steering > 0.6) input[i].steering = 0.8;
+            input[i].steering += input[i].direction / 25;
+            if (input[i].steering < -0.6) input[i].steering = -0.6;
+            if (input[i].steering > 0.6) input[i].steering = 0.6;
           } else {
             input[i].steering *= 0.9;
           }
@@ -180,20 +180,30 @@ initScene = function () {
   scene.add(camera);
 
   // Light
-  light = new THREE.HemisphereLight(0xffffbb, 0x080820, 1);
-  // light.position.set(20, 20, -15);
-  // light.target.position.copy(scene.position);
-  // light.castShadow = true;
-  // light.shadowCameraLeft = -1500;
-  // light.shadowCameraTop = -1500;
-  // light.shadowCameraRight = 1500;
-  // light.shadowCameraBottom = 1500;
-  // light.shadowCameraNear = 20;
-  // light.shadowCameraFar = 400;
-  // light.shadowBias = -0.0001;
-  // light.shadowMapWidth = light.shadowMapHeight = 2048;
-  // light.shadowDarkness = 0.7;
-  scene.add(light);
+
+  // var sndlight = new THREE.AmbientLight( 0x333344);
+  // var sndlight = new THREE.AmbientLight( 0x434354);
+  var sndlight = new THREE.AmbientLight( 0x888877);
+  scene.add( sndlight );
+
+  // var light2 = new THREE.DirectionalLight( 0xFFFFFF,0.1 );
+  // scene.add( light2 );
+
+
+  light = new THREE.DirectionalLight( 0xFFFFFF,0.2 );
+  light.position.set( 20, 20, -15 );
+  light.target.position.copy( scene.position );
+  light.castShadow = true;
+  light.shadowCameraLeft = -1500;
+  light.shadowCameraTop = -1500;
+  light.shadowCameraRight = 1500;
+  light.shadowCameraBottom = 1500;
+  light.shadowCameraNear = 20;
+  light.shadowCameraFar = 1500;
+  light.shadowBias = -.0001;
+  light.shadowMapWidth = light.shadowMapHeight = 2048;	//no effect?
+  light.shadowDarkness = .7;
+  scene.add( light );
 
   ball = new Physijs.SphereMesh(
     new THREE.SphereGeometry(3, 12, 12),
@@ -202,7 +212,6 @@ initScene = function () {
   );
 
   scene.add(ball);
-
   // Loader
   loader = new THREE.TextureLoader();
 
@@ -425,16 +434,10 @@ initScene = function () {
 
   config = {
     power: 5000,
-    // suspension_stiffness: 10.88,
-    // suspension_compression: 1.83,
-    // suspension_damping: 0.28,
-    // max_suspension_travel: 500,
-    // fraction_slip: 10.5,
-    // max_suspension_force: 6000,
-    suspension_stiffness: 5,
+    suspension_stiffness: 6,
     suspension_compression: 1.83,
-    suspension_damping: 0.28,
-    max_suspension_travel: 500,
+    suspension_damping: 0.05,
+    max_suspension_travel: 2000,
     fraction_slip: 10.5,
     max_suspension_force: 6000,
     jump_force: 13000,

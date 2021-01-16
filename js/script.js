@@ -183,27 +183,26 @@ initScene = function () {
 
   // var sndlight = new THREE.AmbientLight( 0x333344);
   // var sndlight = new THREE.AmbientLight( 0x434354);
-  var sndlight = new THREE.AmbientLight( 0x888877);
-  scene.add( sndlight );
+  var sndlight = new THREE.AmbientLight(0xaaaaaa);
+  scene.add(sndlight);
 
   // var light2 = new THREE.DirectionalLight( 0xFFFFFF,0.1 );
   // scene.add( light2 );
 
-
-  light = new THREE.DirectionalLight( 0xFFFFFF,0.2 );
-  light.position.set( 20, 20, -15 );
-  light.target.position.copy( scene.position );
+  light = new THREE.DirectionalLight(0xffffff, 0.1);
+  light.position.set(20, 20, -15);
+  light.target.position.copy(scene.position);
   light.castShadow = true;
   light.shadowCameraLeft = -1500;
   light.shadowCameraTop = -1500;
   light.shadowCameraRight = 1500;
   light.shadowCameraBottom = 1500;
-  light.shadowCameraNear = 20;
-  light.shadowCameraFar = 1500;
-  light.shadowBias = -.0001;
-  light.shadowMapWidth = light.shadowMapHeight = 2048;	//no effect?
-  light.shadowDarkness = .7;
-  scene.add( light );
+  light.shadowCameraNear = 10;
+  light.shadowCameraFar = 2000;
+  light.shadowBias = -0.0001;
+  light.shadowMapWidth = light.shadowMapHeight = 2048; //no effect?
+  light.shadowDarkness = 0.7;
+  scene.add(light);
 
   ball = new Physijs.SphereMesh(
     new THREE.SphereGeometry(3, 12, 12),

@@ -331,8 +331,8 @@ initScene = function () {
 
     // placeObj(objects.bumper, [10, 0, 0], 0, true);
     for (var i = 0; i < 15; i++) {
-      placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [-40, 2, i * 7 - 50], 0, 0, 3);
-      placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [40, 2, i * 7 - 50], 0, 0, 3);
+      placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [-40, 2, i * 7 - 50], 0, 0, 3, 1000);
+      placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [40, 2, i * 7 - 50], 0, 0, 3, 1000);
     }
 
     for (var i = 0; i < 12; i++) {

@@ -3,6 +3,9 @@
 Physijs.scripts.worker = 'vendor/physijs_worker.js';
 Physijs.scripts.ammo = 'ammo.js';
 
+const json_loader = new THREE.JSONLoader();
+const object_loader = new THREE.ObjectLoader();
+
 var initScene,
   render,
   ground_material,
@@ -72,6 +75,7 @@ let setVehicle = function (car, number) {
   var mesh = new Physijs.BoxMesh(load_car, new THREE.MeshFaceMaterial(car.load_car_materials));
   mesh.position.y = 2;
   mesh.position.x = number * 20;
+  mesh.__dirtyPosition = true;
   mesh.castShadow = mesh.receiveShadow = true;
 
   vehicle[number] = new Physijs.Vehicle(
@@ -212,7 +216,7 @@ initScene = function () {
 
   // If your plane is not square as far as face count then the HeightfieldMesh
   // takes two more arguments at the end: # of x faces and # of z faces that were passed to THREE.PlaneMaterial
-  ground = new Physijs.HeightfieldMesh(
+  ground = new Physijs.PlaneMesh(
     ground_geometry,
     ground_material,
     0 // mass
@@ -221,7 +225,15 @@ initScene = function () {
   ground.receiveShadow = true;
   scene.add(ground);
 
-  const json_loader = new THREE.JSONLoader();
+  json_loader.load('models/oak.json', function (tree, tree_materials) {
+    const a = new THREE.Mesh(tree, new THREE.MeshFaceMaterial(tree_materials), 0);
+    a.position.set(-4, 0, 0);
+    a.scale.set(2, 2, 2);
+    scene.add(a);
+    const helper = new THREE.BoundingBoxHelper(a);
+    helper.update();
+    scene.add(helper);
+  });
 
   json_loader.load('models/car1.json', function (car1, car1_materials) {
     json_loader.load('models/car2.json', function (car2, car2_materials) {

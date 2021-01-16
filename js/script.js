@@ -38,7 +38,8 @@ var Axis = function (matrix, axis) {
 };
 
 let resetVehicle = function (number) {
-  vehicle[number].mesh.position.set(20 * number, 2, 0);
+  vehicle[number].mesh.position.y = 5;
+  // vehicle[number].mesh.position.set(20 * number, 2, 0);
   vehicle[number].mesh.setLinearVelocity(new THREE.Vector3(0, 0, 0));
   vehicle[number].mesh.__dirtyPosition = true;
   vehicle[number].mesh.rotation.set(0, 0, 0);
@@ -275,7 +276,6 @@ initScene = function () {
 
   function placeObj(obj, pos, rot = 0, freeze = false) {
     const clone = obj.clone();
-    clone.setAngu;
     clone.position.set(pos[0], pos[1], pos[2]);
     clone.rotation.y = rot;
 
@@ -441,12 +441,12 @@ initScene = function () {
     fraction_slip: 10.5,
     max_suspension_force: 6000,
     jump_force: 13000,
-    number_of_players: 2,
+    camera_on_first: false,
   };
 
   folder.add(config, 'power', 1000, 50000);
   folder.add(config, 'jump_force', 1, 100000);
-  folder.add(config, 'number_of_players', 1, 2, 1);
+  folder.add(config, 'camera_on_first');
   // folder.add(config, 'suspension_stiffness', 1, 100);
   // folder.add(config, 'suspension_compression', 0.01, 5);
   // folder.add(config, 'suspension_damping', 0.01, 3);
@@ -462,7 +462,7 @@ render = function () {
   requestAnimationFrame(render);
 
   if (vehicle[0] && vehicle[1]) {
-    if (config.number_of_players === 2) {
+    if (!config.camera_on_first) {
       var distance = vehicle[0].mesh.position.distanceTo(vehicle[1].mesh.position);
       camera.position
         .copy(vehicle[0].mesh.position.clone().add(vehicle[1].mesh.position).divideScalar(2.0))

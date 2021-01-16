@@ -25,9 +25,12 @@ var initScene,
 
 var primaryCar = {},
   secondaryCar = {};
+var load_obj = {}
+var points = [0,0]
 
 vehicle = [undefined, undefined];
 input = [undefined, undefined];
+
 
 var Axis = function (matrix, axis) {
   return new THREE.Vector3(
@@ -37,10 +40,31 @@ var Axis = function (matrix, axis) {
   );
 };
 
-let resetVehicle = function (number) {
+
+let resetGame = function(score1 = 0, score2 = 0, clearResults = false){
+  ball.position.set(0, 30, 0);
+  ball.setAngularVelocity(new THREE.Vector3(0, 0, 0));
+  ball.setLinearVelocity(new THREE.Vector3(0, 0, 0));
+  ball.__dirtyPosition = true;
+  resetVehicle(0, true)
+  resetVehicle(1, true)
+  points[0] += score1;
+  points[1] += score2;
+  document.getElementById("result1").innerHTML = points[0]
+  document.getElementById("result2").innerHTML = points[1]
+  if(clearResults){
+    points = [0,0];
+  }
+}
+
+let resetVehicle = function (number, initialPosition) {
   vehicle[number].mesh.position.y = 5;
-  // vehicle[number].mesh.position.set(20 * number, 2, 0);
   vehicle[number].mesh.setLinearVelocity(new THREE.Vector3(0, 0, 0));
+  vehicle[number].mesh.setAngularVelocity(new THREE.Vector3(0, 0, 0));
+  if(initialPosition){
+    vehicle[number].mesh.position.x = 0;
+    vehicle[number].mesh.position.z = -20 + number*40;
+  }
   vehicle[number].mesh.__dirtyPosition = true;
   vehicle[number].mesh.rotation.set(0, 0, 0);
   vehicle[number].mesh.__dirtyRotation = true;
@@ -78,9 +102,12 @@ let setVehicle = function (car, number) {
     scene.remove(vehicle[number]);
   }
 
-  var mesh = new Physijs.ConvexMesh(load_car, new THREE.MeshFaceMaterial(car.load_car_materials));
+  var mesh = new Physijs.ConvexMesh(load_car, new THREE.MeshFaceMaterial(car.load_car_materials), 50);
+  mesh.position.z = -20 + number*40;
   mesh.position.y = 2;
-  mesh.position.x = number * 20;
+  if(number === 1){
+    mesh.rotateY(Math.PI)
+  }
   mesh.__dirtyPosition = true;
   mesh.castShadow = mesh.receiveShadow = true;
 
@@ -124,13 +151,13 @@ initScene = function () {
 
   render_stats = new Stats();
   render_stats.domElement.style.position = 'absolute';
-  render_stats.domElement.style.top = '0';
+  render_stats.domElement.style.top = '30px';
   render_stats.domElement.style.zIndex = 100;
   document.getElementById('viewport').appendChild(render_stats.domElement);
 
   physics_stats = new Stats();
   physics_stats.domElement.style.position = 'absolute';
-  physics_stats.domElement.style.top = '0';
+  physics_stats.domElement.style.top = '30px';
   physics_stats.domElement.style.left = '80px';
   physics_stats.domElement.style.zIndex = 100;
   document.getElementById('viewport').appendChild(physics_stats.domElement);
@@ -147,7 +174,7 @@ initScene = function () {
           var directionalSpeed = direction.dot(linVelocity);
 
           if (input[i].direction !== null) {
-            input[i].steering += input[i].direction / 25;
+            input[i].steering += input[i].direction / 15;
             if (input[i].steering < -0.6) input[i].steering = -0.6;
             if (input[i].steering > 0.6) input[i].steering = 0.6;
           } else {
@@ -162,7 +189,7 @@ initScene = function () {
           if (input[i].power === true && input[i].forward === true) {
             vehicle[i].applyEngineForce(config.power / (1 + Math.max(0.0, directionalSpeed) * 0.1));
           } else if (input[i].power === true && input[i].forward === false) {
-            vehicle[i].applyEngineForce(-config.power * 0.2);
+            vehicle[i].applyEngineForce(-config.power * 0.6);
             // } else if (input[i].power === false) {
             //   vehicle[i].setBrake(20, 2);
             //   vehicle[i].setBrake(20, 3);
@@ -208,9 +235,12 @@ initScene = function () {
 
   ball = new Physijs.SphereMesh(
     new THREE.SphereGeometry(3, 12, 12),
-    new THREE.MeshPhongMaterial({ color: 0xffffff }),
-    1
+    Physijs.createMaterial(new THREE.MeshPhongMaterial({ color: 0xffffff }, 1, 3)),
+    0.5
   );
+
+  ball.position.set(0,30,0)
+  ball.__dirtyPosition = true;
 
   scene.add(ball);
   // Loader
@@ -222,7 +252,7 @@ initScene = function () {
       map: loader.load('images/paper.jpg'),
     }),
     0.8, // high friction
-    0.4 // low restitution
+    1 // low restitution
   );
   ground_material.map.wrapS = ground_material.map.wrapT = THREE.RepeatWrapping;
   ground_material.map.repeat.set(3, 3);
@@ -230,7 +260,7 @@ initScene = function () {
   // Ground
   var NoiseGen = new SimplexNoise();
 
-  var ground_geometry = new THREE.PlaneGeometry(100, 100, 1, 1);
+  var ground_geometry = new THREE.PlaneGeometry(300, 300, 1, 1);
   ground_geometry.computeFaceNormals();
   ground_geometry.computeVertexNormals();
 
@@ -245,64 +275,80 @@ initScene = function () {
   ground.receiveShadow = true;
   scene.add(ground);
 
-  var objects = {};
 
   json_loader.load('models/oak.json', function (oak_obj, oak_materials) {
     json_loader.load('models/birch.json', function (birch_obj, birch_materials) {
       json_loader.load('models/bumper.json', function (bumper_obj, bumper_materials) {
-        const oak = new THREE.Mesh(oak_obj, new THREE.MeshFaceMaterial(oak_materials), 0);
-        oak.position.set(0, 0, 0);
-        oak.scale.set(2, 2, 2);
-        objects.oak = oak;
-
-        const birch = new THREE.Mesh(birch_obj, new THREE.MeshFaceMaterial(birch_materials), 0);
-        birch.position.set(0, 0, 0);
-        birch.scale.set(2, 2, 2);
-        objects.birch = birch;
-
-        const bumper = new Physijs.BoxMesh(
-          bumper_obj,
-          new THREE.MeshFaceMaterial(bumper_materials),
-          0
-        );
-        bumper.position.set(0, 0, 0);
-        bumper.scale.set(3, 3, 3);
-        objects.bumper = bumper;
+        load_obj.oak_obj = oak_obj;
+        load_obj.oak_materials = oak_materials;
+        load_obj.birch_materials = birch_materials;
+        load_obj.birch_obj = birch_obj;
+        load_obj.bumper_obj = bumper_obj;
+        load_obj.bumper_materials = bumper_materials;
 
         objectsReady();
       });
     });
   });
 
-  function placeObj(obj, pos, rot = 0, freeze = false) {
-    const clone = obj.clone();
-    clone.position.set(pos[0], pos[1], pos[2]);
-    clone.rotation.y = rot;
+  function placeThreeObj(obj, material, pos, rot = 0, scale = 1) {
+    const meshObj = new THREE.Mesh(obj, new THREE.MeshFaceMaterial(material));
+    meshObj.position.set(pos[0], pos[1], pos[2]);
+    meshObj.scale.set(scale, scale, scale);
 
-    if (freeze) {
-      clone.setAngularFactor(new THREE.Vector3(0, 0, 0));
-      clone.setLinearFactor(new THREE.Vector3(0, 0, 0));
+    meshObj.rotation.y = rot;
+    //
+    // if (freeze) {
+    //   meshObj.setAngularFactor(new THREE.Vector3(0, 0, 0));
+    //   meshObj.setLinearFactor(new THREE.Vector3(0, 0, 0));
+    // }
+
+    scene.add(meshObj);
+  }
+
+  function placePhysiObj(obj, material, pos, rot = 0, mass = 1, scale = 1, customHeight = 0) {
+    const meshObj = new Physijs.BoxMesh(obj, new THREE.MeshFaceMaterial(material), mass);
+    meshObj.position.set(pos[0], pos[1], pos[2]);
+    meshObj.scale.set(scale, scale, scale);
+    if(customHeight !== 0){
+      meshObj._physijs.height = customHeight;
     }
 
-    scene.add(clone);
+    meshObj.rotation.y = rot;
+
+
+    scene.add(meshObj);
   }
 
   function objectsReady() {
-    placeObj(objects.oak, [40, 0, -10], Math.random() * 2 * Math.PI);
-    placeObj(objects.oak, [45, 0, 30], Math.random() * 2 * Math.PI);
-
-    placeObj(objects.birch, [-30, 0, 25], Math.random() * 2 * Math.PI);
-    placeObj(objects.birch, [-27, 0, -20], Math.random() * 2 * Math.PI);
+    placeThreeObj(load_obj.oak_obj, load_obj.oak_materials, [55, 0, -10], Math.random() * 2 * Math.PI, 2);
+    placeThreeObj(load_obj.oak_obj, load_obj.oak_materials, [-53, 0, 30], 0, 3);
+    placeThreeObj(load_obj.oak_obj, load_obj.oak_materials, [10, 0, 70], Math.random() * 2 * Math.PI, 1.5);
+    placeThreeObj(load_obj.birch_obj, load_obj.birch_materials, [55, 0, 25], Math.random() * 2 * Math.PI, 2.5);
+    placeThreeObj(load_obj.birch_obj, load_obj.birch_materials, [-55, 0, -20], Math.random() * 2 * Math.PI, 2);;
+    placeThreeObj(load_obj.birch_obj, load_obj.birch_materials, [-10, 0, -70], Math.random() * 2 * Math.PI, 3);
 
 
     // placeObj(objects.bumper, [10, 0, 0], 0, true);
-    for (var i = 0; i < 10; i++) {
-    placeObj(objects.bumper, [-30, 2, i * 7 - 30], 0, true);
-    placeObj(objects.bumper, [30, 2, i * 7 - 30], 0, true);
-
-    placeObj(objects.bumper, [i * 7 - 30, 2, 30], Math.PI * 0.5, true);
-    placeObj(objects.bumper, [i * 7 - 30, 2, -30], Math.PI * 0.5, true);
+    for (var i = 0; i < 15; i++) {
+      placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [-40, 2, i * 7 - 50], 0, 0, 3);
+      placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [40, 2, i * 7 - 50], 0, 0, 3);
     }
+
+    for (var i = 0; i < 12; i++) {
+      if(i === 6 ||i ===  5 ){
+        placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [i * 7 - 40, 2, 60], Math.PI * 0.5, 0, 3,1000);
+        placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [i * 7 - 40, 2, -60], Math.PI * 0.5, 0, 3, 1000);
+      }
+      else {
+        placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [i * 7 - 40, 2, 50], Math.PI * 0.5, 0, 3, 1000);
+        placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [i * 7 - 40, 2, -50], Math.PI * 0.5, 0, 3, 1000);
+      }
+    }
+    placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [5, 2, 55], 0, 0, 3, 1000);
+    placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [-10, 2, 55], 0, 0, 3, 1000);
+    placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [5, 2, -55], 0, 0, 3, 1000);
+    placePhysiObj(load_obj.bumper_obj, load_obj.bumper_materials, [-10, 2, -55], 0, 0, 3, 1000);
   }
 
   json_loader.load('models/car1.json', function (car1, car1_materials) {
@@ -383,10 +429,14 @@ initScene = function () {
               break;
 
             case 82: // R
-              ball.position.set(0, 3, 0);
-              ball.setAngularVelocity(new THREE.Vector3(0, 0, 0));
-              ball.setLinearVelocity(new THREE.Vector3(0, 0, 0));
-              ball.__dirtyPosition = true;
+              resetGame(0,0,true)
+              break;
+
+            case 56: // 8
+              resetGame(1,0,false)
+              break;
+            case 57: // 8
+              resetGame(0,1,false)
               break;
           }
         });
@@ -410,12 +460,12 @@ initScene = function () {
               break;
             case 49: // 1
               if (vehicle[0]) {
-                resetVehicle(0);
+                resetVehicle(0, false);
               }
               break;
             case 50: // T
               if (vehicle[1]) {
-                resetVehicle(1);
+                resetVehicle(1, false);
               }
               break;
 
@@ -445,18 +495,18 @@ initScene = function () {
   folder.open();
 
   config = {
-    power: 4000,
+    power: 1500,
     suspension_stiffness: 50,
     suspension_compression: 0.083,
     suspension_damping: 100.05,
     max_suspension_travel: 50000,
     fraction_slip: 10.5,
     max_suspension_force: 6000,
-    jump_force: 13000,
+    jump_force: 3000,
     camera_on_first: false,
   };
 
-  folder.add(config, 'power', 1000, 50000);
+  folder.add(config, 'power', 0, 30000);
   folder.add(config, 'jump_force', 1, 100000);
   folder.add(config, 'camera_on_first');
   // folder.add(config, 'suspension_stiffness', 1, 100);
@@ -478,7 +528,7 @@ render = function () {
       var distance = vehicle[0].mesh.position.distanceTo(vehicle[1].mesh.position);
       camera.position
         .copy(vehicle[0].mesh.position.clone().add(vehicle[1].mesh.position).divideScalar(2.0))
-        .add(new THREE.Vector3(40, 50 + distance * 0.5, 40));
+        .add(new THREE.Vector3(40, 70 + distance * 0.5, 40));
       camera.lookAt(
         vehicle[0].mesh.position.clone().add(vehicle[1].mesh.position).divideScalar(2.0)
       );

@@ -12,13 +12,16 @@ body {
 }
 
 #heading {
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  padding-top: 10px;
+  padding-bottom: 10px;
   position: absolute;
   top: 0;
   width: 100%;
   margin: 0;
-  padding: 0;
   background-color: #c6c6c6;
-  text-align: center;
 }
 
 #heading h1 {
@@ -28,7 +31,9 @@ body {
   font-size: 16px;
 }
 
-#heading a {
+#heading > div {
+  display: flex;
+  font-size: 16px;
   /*color: #4488ff;*/
 }
 

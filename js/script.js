@@ -288,9 +288,21 @@ initScene = function () {
   }
 
   function objectsReady() {
-    placeObj(objects.oak, [0, 0, 0], 0);
+    placeObj(objects.oak, [40, 0, -10], Math.random() * 2 * Math.PI);
+    placeObj(objects.oak, [45, 0, 30], Math.random() * 2 * Math.PI);
 
-    placeObj(objects.bumper, [10, 0, 0], 0, true);
+    placeObj(objects.birch, [-30, 0, 25], Math.random() * 2 * Math.PI);
+    placeObj(objects.birch, [-27, 0, -20], Math.random() * 2 * Math.PI);
+
+
+    // placeObj(objects.bumper, [10, 0, 0], 0, true);
+    for (var i = 0; i < 10; i++) {
+    placeObj(objects.bumper, [-30, 2, i * 7 - 30], 0, true);
+    placeObj(objects.bumper, [30, 2, i * 7 - 30], 0, true);
+
+    placeObj(objects.bumper, [i * 7 - 30, 2, 30], Math.PI * 0.5, true);
+    placeObj(objects.bumper, [i * 7 - 30, 2, -30], Math.PI * 0.5, true);
+    }
   }
 
   json_loader.load('models/car1.json', function (car1, car1_materials) {

@@ -21,7 +21,10 @@ var initScene,
   loader,
   config,
   input,
-  ball;
+  ball,
+  goal1,
+  goal2,
+  resetting = false;
 
 var primaryCar = {},
   secondaryCar = {};
@@ -40,6 +43,7 @@ var Axis = function (matrix, axis) {
 };
 
 let resetGame = function (score1 = 0, score2 = 0, clearResults = false) {
+  document.getElementById('heading').style.backgroundColor = '#c6c6c6';
   ball.position.set(0, 30, 0);
   ball.setAngularVelocity(new THREE.Vector3(0, 0, 0));
   ball.setLinearVelocity(new THREE.Vector3(0, 0, 0));
@@ -53,6 +57,7 @@ let resetGame = function (score1 = 0, score2 = 0, clearResults = false) {
   if (clearResults) {
     points = [0, 0];
   }
+  resetting = false;
 };
 
 let resetVehicle = function (number, initialPosition) {
@@ -252,6 +257,21 @@ initScene = function () {
   ball.__dirtyPosition = true;
 
   scene.add(ball);
+
+  goal1 = new THREE.Mesh(new THREE.BoxGeometry(15, 20, 0.2), new THREE.MeshPhongMaterial(), 0);
+  goal1.position.set(-2, 0, -53);
+  // scene.add(goal1);
+
+  // goal1.addEventListener('collision', function(obj) {
+  //   if (obj === ball) {
+  //     alert(1);
+  //   }
+  // })
+
+  goal2 = new THREE.Mesh(new THREE.BoxGeometry(15, 10, 0.2), new THREE.MeshPhongMaterial(), 0);
+  goal2.position.set(-2, 0, 53);
+  // scene.add(goal2);
+
   // Loader
   loader = new THREE.TextureLoader();
 
@@ -565,6 +585,11 @@ initScene = function () {
   folder.add(config, 'power', 0, 30000);
   folder.add(config, 'jump_force', 1, 100000);
   folder.add(config, 'camera_on_first');
+  // folder.add(goal1.position, 'z', -70.0, -50.0)
+  // folder.add(goal1.position, 'x', -10.0, 10.0)
+  folder.add(goal2.position, 'z', -70.0, -50.0);
+  folder.add(goal2.position, 'x', -10.0, 10.0);
+
   // folder.add(config, 'suspension_stiffness', 1, 100);
   // folder.add(config, 'suspension_compression', 0.01, 5);
   // folder.add(config, 'suspension_damping', 0.01, 3);
@@ -595,6 +620,22 @@ render = function () {
     // camera.lookAt(vehicle[0].mesh.position);
     // light.target.position.copy(vehicle.mesh.position);
     // light.position.addVectors(light.target.position, new THREE.Vector3(20, 20, -15));
+  }
+
+  if (ball.position.z < goal1.position.z && !resetting) {
+    resetting = true;
+    document.getElementById('heading').style.backgroundColor = '#00EA2D';
+    setTimeout(function () {
+      resetGame(0, 1);
+    }, 1500);
+  }
+
+  if (ball.position.z > goal2.position.z && !resetting) {
+    resetting = true;
+    document.getElementById('heading').style.backgroundColor = '#6863D7';
+    setTimeout(function () {
+      resetGame(1, 0);
+    }, 1500);
   }
 
   renderer.render(scene, camera);

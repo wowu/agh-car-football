@@ -230,9 +230,19 @@ initScene = function () {
     a.position.set(-4, 0, 0);
     a.scale.set(2, 2, 2);
     scene.add(a);
-    const helper = new THREE.BoundingBoxHelper(a);
-    helper.update();
-    scene.add(helper);
+    // const helper = new THREE.BoundingBoxHelper(a);
+    // helper.update();
+    // scene.add(helper);
+  });
+
+  json_loader.load('models/birch.json', function (tree, tree_materials) {
+    const a = new THREE.Mesh(tree, new THREE.MeshFaceMaterial(tree_materials), 0);
+    a.position.set(20, 0, 0);
+    a.scale.set(2, 2, 2);
+    scene.add(a);
+    // const helper = new THREE.BoundingBoxHelper(a);
+    // helper.update();
+    // scene.add(helper);
   });
 
   json_loader.load('models/car1.json', function (car1, car1_materials) {

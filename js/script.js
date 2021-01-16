@@ -143,8 +143,8 @@ initScene = function () {
 
           if (input[i].direction !== null) {
             input[i].steering += input[i].direction / 30;
-            if (input[i].steering < -0.6) input[i].steering = -0.6;
-            if (input[i].steering > 0.6) input[i].steering = 0.6;
+            if (input[i].steering < -0.6) input[i].steering = -0.8;
+            if (input[i].steering > 0.6) input[i].steering = 0.8;
           } else {
             input[i].steering *= 0.9;
           }
@@ -158,7 +158,7 @@ initScene = function () {
             vehicle[i].applyEngineForce(config.power / (1 + Math.max(0.0, directionalSpeed) * 0.1));
           } else if (input[i].power === true && input[i].forward === false) {
             vehicle[i].applyEngineForce(
-              (-config.power * 0.95) / (1 + Math.max(0.0, directionalSpeed) * 0.1)
+              (-config.power * 0.2)
             );
             // } else if (input[i].power === false) {
             //   vehicle[i].setBrake(20, 2);
@@ -412,9 +412,9 @@ render = function () {
       camera.lookAt(vehicle[0].mesh.position.clone().add(vehicle[1].mesh.position).divideScalar(2.0));
     }
     else{
-      // camera.position
-      // .copy(vehicle[0].mesh.position.clone().add(vehicle[0].mesh.position).divideScalar(2.0))
-      // .add(new THREE.Vector3(40, 50 + distance * 0.3, 40));
+      camera.position
+      .copy(vehicle[0].mesh.position.clone()
+      .add(new THREE.Vector3(40, 60, 40)));
       camera.lookAt(vehicle[0].mesh.position)
     }
     // camera.lookAt(vehicle[0].mesh.position);

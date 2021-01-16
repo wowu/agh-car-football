@@ -79,7 +79,7 @@ let setVehicle = function (car, number) {
 
   var mesh = new Physijs.ConvexMesh(load_car, new THREE.MeshFaceMaterial(car.load_car_materials));
   mesh.position.y = 2;
-  mesh.position.x = number * 20 - 10;
+  mesh.position.x = number * 20;
   mesh.__dirtyPosition = true;
   mesh.castShadow = mesh.receiveShadow = true;
 
@@ -115,7 +115,7 @@ let setVehicle = function (car, number) {
 };
 
 initScene = function () {
-  renderer = new THREE.WebGLRenderer({ antialias: false });
+  renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMapSoft = true;
@@ -183,26 +183,27 @@ initScene = function () {
 
   // var sndlight = new THREE.AmbientLight( 0x333344);
   // var sndlight = new THREE.AmbientLight( 0x434354);
-  var sndlight = new THREE.AmbientLight(0xaaaaaa);
-  scene.add(sndlight);
+  var sndlight = new THREE.HemisphereLight("rgb(255,255,240)", "rgb(191,180,153)", 1);
+  scene.add( sndlight );
 
   // var light2 = new THREE.DirectionalLight( 0xFFFFFF,0.1 );
   // scene.add( light2 );
 
-  light = new THREE.DirectionalLight(0xffffff, 0.1);
-  light.position.set(20, 20, -15);
-  light.target.position.copy(scene.position);
+
+  light = new THREE.DirectionalLight("rgb(75,75,75)",0.2 );
+  light.position.set( 200, 200, -150 );
+  light.target.position.copy( scene.position );
   light.castShadow = true;
-  light.shadowCameraLeft = -1500;
-  light.shadowCameraTop = -1500;
-  light.shadowCameraRight = 1500;
-  light.shadowCameraBottom = 1500;
-  light.shadowCameraNear = 10;
-  light.shadowCameraFar = 2000;
-  light.shadowBias = -0.0001;
-  light.shadowMapWidth = light.shadowMapHeight = 2048; //no effect?
-  light.shadowDarkness = 0.7;
-  scene.add(light);
+  light.shadowCameraLeft = -150;
+  light.shadowCameraTop = -150;
+  light.shadowCameraRight = 150;
+  light.shadowCameraBottom = 150;
+  light.shadowCameraNear = 20;
+  light.shadowCameraFar = 1500;
+  light.shadowBias = -.0001;
+  light.shadowMapWidth = light.shadowMapHeight = 2048;	//no effect?
+  light.shadowDarkness = .7;
+  scene.add( light );
 
   ball = new Physijs.SphereMesh(
     new THREE.SphereGeometry(3, 12, 12),
@@ -278,28 +279,18 @@ initScene = function () {
     clone.position.set(pos[0], pos[1], pos[2]);
     clone.rotation.y = rot;
 
-    // if (freeze) {
-    //   clone.setAngularFactor(new THREE.Vector3(0, 0, 0));
-    //   clone.setLinearFactor(new THREE.Vector3(0, 0, 0));
-    // }
+    if (freeze) {
+      clone.setAngularFactor(new THREE.Vector3(0, 0, 0));
+      clone.setLinearFactor(new THREE.Vector3(0, 0, 0));
+    }
 
     scene.add(clone);
   }
 
   function objectsReady() {
-    placeObj(objects.oak, [40, 0, -10], Math.random() * 2 * Math.PI);
-    placeObj(objects.oak, [45, 0, 30], Math.random() * 2 * Math.PI);
+    placeObj(objects.oak, [0, 0, 0], 0);
 
-    placeObj(objects.birch, [-30, 0, 25], Math.random() * 2 * Math.PI);
-    placeObj(objects.birch, [-27, 0, -20], Math.random() * 2 * Math.PI);
-
-    for (var i = 0; i < 10; i++) {
-      placeObj(objects.bumper, [-30, 2, i * 7 - 30], 0, true);
-      placeObj(objects.bumper, [30, 2, i * 7 - 30], 0, true);
-
-      placeObj(objects.bumper, [i * 7 - 30, 2, 30], Math.PI * 0.5, true);
-      placeObj(objects.bumper, [i * 7 - 30, 2, -30], Math.PI * 0.5, true);
-    }
+    placeObj(objects.bumper, [10, 0, 0], 0, true);
   }
 
   json_loader.load('models/car1.json', function (car1, car1_materials) {
@@ -442,11 +433,11 @@ initScene = function () {
   folder.open();
 
   config = {
-    power: 5000,
-    suspension_stiffness: 6,
-    suspension_compression: 1.83,
-    suspension_damping: 0.05,
-    max_suspension_travel: 2000,
+    power: 4000,
+    suspension_stiffness: 50,
+    suspension_compression: 0.083,
+    suspension_damping: 100.05,
+    max_suspension_travel: 50000,
     fraction_slip: 10.5,
     max_suspension_force: 6000,
     jump_force: 13000,

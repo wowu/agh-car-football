@@ -20,8 +20,8 @@ var initScene,
   vehicle,
   loader,
   config,
-  input;
-
+  input,
+  ball;
 
 var primaryCar = {},
   secondaryCar = {};
@@ -39,30 +39,35 @@ var Axis = function (matrix, axis) {
 
 let resetVehicle = function (number) {
   vehicle[number].mesh.position.set(20 * number, 2, 0);
-  vehicle[number].mesh.setLinearVelocity(new THREE.Vector3(0,0,0))
+  vehicle[number].mesh.setLinearVelocity(new THREE.Vector3(0, 0, 0));
   vehicle[number].mesh.__dirtyPosition = true;
   vehicle[number].mesh.rotation.set(0, 0, 0);
   vehicle[number].mesh.__dirtyRotation = true;
 };
 
 let jumpVehicle = function (number) {
-  var vehicle_to_jump = vehicle[number]
-    var force = 0.0;
-    for (var i = 0; i < vehicle_to_jump.wheels.length; i++) {
-      var local = new THREE.Vector3(vehicle_to_jump.wheels[0].matrix.elements[12],
-        vehicle_to_jump.wheels[0].matrix.elements[13],
-        vehicle_to_jump.wheels[0].matrix.elements[14]);
-      var dist = local.y;
-      var contraction = dist < 1.5 ? 1.0 : 0.0;
-      force += contraction;
-    }
-    if (contraction > 0.0)
-    {
-      force = config.jump_force * contraction / vehicle_to_jump.wheels.length;
-      vehicle_to_jump.mesh.applyCentralImpulse( new THREE.Vector3(0,force,0));
-      var v = new THREE.Vector3(vehicle_to_jump.mesh.matrixWorld.elements[8], vehicle_to_jump.mesh.matrixWorld.elements[9], vehicle_to_jump.mesh.matrixWorld.elements[10]);
-    }
-}
+  var vehicle_to_jump = vehicle[number];
+  var force = 0.0;
+  for (var i = 0; i < vehicle_to_jump.wheels.length; i++) {
+    var local = new THREE.Vector3(
+      vehicle_to_jump.wheels[0].matrix.elements[12],
+      vehicle_to_jump.wheels[0].matrix.elements[13],
+      vehicle_to_jump.wheels[0].matrix.elements[14]
+    );
+    var dist = local.y;
+    var contraction = dist < 1.5 ? 1.0 : 0.0;
+    force += contraction;
+  }
+  if (contraction > 0.0) {
+    force = (config.jump_force * contraction) / vehicle_to_jump.wheels.length;
+    vehicle_to_jump.mesh.applyCentralImpulse(new THREE.Vector3(0, force, 0));
+    var v = new THREE.Vector3(
+      vehicle_to_jump.mesh.matrixWorld.elements[8],
+      vehicle_to_jump.mesh.matrixWorld.elements[9],
+      vehicle_to_jump.mesh.matrixWorld.elements[10]
+    );
+  }
+};
 
 let setVehicle = function (car, number) {
   var load_car = car.load_car.clone().translate(0, -0.9, 0);
@@ -132,7 +137,6 @@ initScene = function () {
   scene = new Physijs.Scene();
   scene.setGravity(new THREE.Vector3(0, -30, 0));
 
-
   scene.addEventListener('update', function () {
     for (var i = 0; i < 2; i++) {
       if (input[i]) {
@@ -157,9 +161,7 @@ initScene = function () {
           if (input[i].power === true && input[i].forward === true) {
             vehicle[i].applyEngineForce(config.power / (1 + Math.max(0.0, directionalSpeed) * 0.1));
           } else if (input[i].power === true && input[i].forward === false) {
-            vehicle[i].applyEngineForce(
-              (-config.power * 0.2)
-            );
+            vehicle[i].applyEngineForce(-config.power * 0.2);
             // } else if (input[i].power === false) {
             //   vehicle[i].setBrake(20, 2);
             //   vehicle[i].setBrake(20, 3);
@@ -193,13 +195,21 @@ initScene = function () {
   // light.shadowDarkness = 0.7;
   scene.add(light);
 
+  ball = new Physijs.SphereMesh(
+    new THREE.SphereGeometry(3, 12, 12),
+    new THREE.MeshPhongMaterial({ color: 0xffffff }),
+    1
+  );
+
+  scene.add(ball);
+
   // Loader
   loader = new THREE.TextureLoader();
 
   // Materials
   ground_material = Physijs.createMaterial(
     new THREE.MeshLambertMaterial({
-      map: loader.load('images/rocks.jpg'),
+      map: loader.load('images/paper.jpg'),
     }),
     0.8, // high friction
     0.4 // low restitution
@@ -210,7 +220,7 @@ initScene = function () {
   // Ground
   var NoiseGen = new SimplexNoise();
 
-  var ground_geometry = new THREE.PlaneGeometry(300, 300, 1, 1);
+  var ground_geometry = new THREE.PlaneGeometry(100, 100, 1, 1);
   ground_geometry.computeFaceNormals();
   ground_geometry.computeVertexNormals();
 
@@ -225,25 +235,54 @@ initScene = function () {
   ground.receiveShadow = true;
   scene.add(ground);
 
-  json_loader.load('models/oak.json', function (tree, tree_materials) {
-    const a = new THREE.Mesh(tree, new THREE.MeshFaceMaterial(tree_materials), 0);
-    a.position.set(-4, 0, 0);
-    a.scale.set(2, 2, 2);
-    scene.add(a);
-    // const helper = new THREE.BoundingBoxHelper(a);
-    // helper.update();
-    // scene.add(helper);
+  var objects = {};
+
+  json_loader.load('models/oak.json', function (oak_obj, oak_materials) {
+    json_loader.load('models/birch.json', function (birch_obj, birch_materials) {
+      json_loader.load('models/bumper.json', function (bumper_obj, bumper_materials) {
+        const oak = new THREE.Mesh(oak_obj, new THREE.MeshFaceMaterial(oak_materials), 0);
+        oak.position.set(0, 0, 0);
+        oak.scale.set(2, 2, 2);
+        objects.oak = oak;
+
+        const birch = new THREE.Mesh(birch_obj, new THREE.MeshFaceMaterial(birch_materials), 0);
+        birch.position.set(0, 0, 0);
+        birch.scale.set(2, 2, 2);
+        objects.birch = birch;
+
+        const bumper = new Physijs.BoxMesh(
+          bumper_obj,
+          new THREE.MeshFaceMaterial(bumper_materials),
+          0
+        );
+        bumper.position.set(0, 0, 0);
+        bumper.scale.set(3, 3, 3);
+        objects.bumper = bumper;
+
+        objectsReady();
+      });
+    });
   });
 
-  json_loader.load('models/birch.json', function (tree, tree_materials) {
-    const a = new THREE.Mesh(tree, new THREE.MeshFaceMaterial(tree_materials), 0);
-    a.position.set(20, 0, 0);
-    a.scale.set(2, 2, 2);
-    scene.add(a);
-    // const helper = new THREE.BoundingBoxHelper(a);
-    // helper.update();
-    // scene.add(helper);
-  });
+  function placeObj(obj, pos, rot = 0, freeze = false) {
+    const clone = obj.clone();
+    clone.setAngu;
+    clone.position.set(pos[0], pos[1], pos[2]);
+    clone.rotation.y = rot;
+
+    if (freeze) {
+      clone.setAngularFactor(new THREE.Vector3(0, 0, 0));
+      clone.setLinearFactor(new THREE.Vector3(0, 0, 0));
+    }
+
+    scene.add(clone);
+  }
+
+  function objectsReady() {
+    placeObj(objects.oak, [0, 0, 0], 0);
+
+    placeObj(objects.bumper, [10, 0, 0], 0, true);
+  }
 
   json_loader.load('models/car1.json', function (car1, car1_materials) {
     json_loader.load('models/car2.json', function (car2, car2_materials) {
@@ -320,6 +359,13 @@ initScene = function () {
 
             case 191: // "/"
               jumpVehicle(0);
+              break;
+
+            case 82: // R
+              ball.position.set(0, 3, 0);
+              ball.setAngularVelocity(new THREE.Vector3(0, 0, 0));
+              ball.setLinearVelocity(new THREE.Vector3(0, 0, 0));
+              ball.__dirtyPosition = true;
               break;
           }
         });
@@ -413,19 +459,17 @@ render = function () {
   requestAnimationFrame(render);
 
   if (vehicle[0] && vehicle[1]) {
-
-    if(config.number_of_players === 2){
+    if (config.number_of_players === 2) {
       var distance = vehicle[0].mesh.position.distanceTo(vehicle[1].mesh.position);
       camera.position
         .copy(vehicle[0].mesh.position.clone().add(vehicle[1].mesh.position).divideScalar(2.0))
         .add(new THREE.Vector3(40, 50 + distance * 0.5, 40));
-      camera.lookAt(vehicle[0].mesh.position.clone().add(vehicle[1].mesh.position).divideScalar(2.0));
-    }
-    else{
-      camera.position
-      .copy(vehicle[0].mesh.position.clone()
-      .add(new THREE.Vector3(40, 60, 40)));
-      camera.lookAt(vehicle[0].mesh.position)
+      camera.lookAt(
+        vehicle[0].mesh.position.clone().add(vehicle[1].mesh.position).divideScalar(2.0)
+      );
+    } else {
+      camera.position.copy(vehicle[0].mesh.position.clone().add(new THREE.Vector3(40, 60, 40)));
+      camera.lookAt(vehicle[0].mesh.position);
     }
     // camera.lookAt(vehicle[0].mesh.position);
     // light.target.position.copy(vehicle.mesh.position);

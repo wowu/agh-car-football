@@ -19,6 +19,7 @@ var initScene,
   config,
   input;
 
+
 var primaryCar = {},
   secondaryCar = {};
 
@@ -40,15 +41,34 @@ let resetVehicle = function (number) {
   vehicle[number].mesh.__dirtyRotation = true;
 };
 
+let jumpVehicle = function (number) {
+  var vehicle_to_jump = vehicle[number]
+    var force = 0.0;
+    for (var i = 0; i < vehicle_to_jump.wheels.length; i++) {
+      var local = new THREE.Vector3(vehicle_to_jump.wheels[0].matrix.elements[12],
+        vehicle_to_jump.wheels[0].matrix.elements[13],
+        vehicle_to_jump.wheels[0].matrix.elements[14]);
+      var dist = local.y;
+      var contraction = dist < 1.5 ? 1.0 : 0.0;
+      force += contraction;
+    }
+    if (contraction > 0.0)
+    {
+      force = config.jump_force * contraction / vehicle_to_jump.wheels.length;
+      vehicle_to_jump.mesh.applyCentralImpulse( new THREE.Vector3(0,force,0));
+      var v = new THREE.Vector3(vehicle_to_jump.mesh.matrixWorld.elements[8], vehicle_to_jump.mesh.matrixWorld.elements[9], vehicle_to_jump.mesh.matrixWorld.elements[10]);
+    }
+}
+
 let setVehicle = function (car, number) {
-  car.load_car.translate(0, -0.9, 0);
-  car.load_car.scale(1.4, 1.4, 1.4);
+  var load_car = car.load_car.clone().translate(0, -0.9, 0);
+  load_car.scale(1.4, 1.4, 1.4);
 
   if (vehicle[number]) {
     scene.remove(vehicle[number]);
   }
 
-  var mesh = new Physijs.BoxMesh(car.load_car, new THREE.MeshFaceMaterial(car.load_car_materials));
+  var mesh = new Physijs.BoxMesh(load_car, new THREE.MeshFaceMaterial(car.load_car_materials));
   mesh.position.y = 2;
   mesh.position.x = number * 20;
   mesh.castShadow = mesh.receiveShadow = true;
@@ -115,7 +135,7 @@ initScene = function () {
           var directionalSpeed = direction.dot(linVelocity);
 
           if (input[i].direction !== null) {
-            input[i].steering += input[i].direction / 50;
+            input[i].steering += input[i].direction / 30;
             if (input[i].steering < -0.6) input[i].steering = -0.6;
             if (input[i].steering > 0.6) input[i].steering = 0.6;
           } else {
@@ -268,6 +288,14 @@ initScene = function () {
               input[1].power = true;
               input[1].forward = false;
               break;
+
+            case 88: // "X"
+              jumpVehicle(1);
+              break;
+
+            case 191: // "/"
+              jumpVehicle(0);
+              break;
           }
         });
 
@@ -332,9 +360,11 @@ initScene = function () {
     max_suspension_travel: 500,
     fraction_slip: 10.5,
     max_suspension_force: 6000,
+    jump_force: 13000,
   };
 
   folder.add(config, 'power', 1000, 50000);
+  folder.add(config, 'jump_force', 1, 100000);
   // folder.add(config, 'suspension_stiffness', 1, 100);
   // folder.add(config, 'suspension_compression', 0.01, 5);
   // folder.add(config, 'suspension_damping', 0.01, 3);

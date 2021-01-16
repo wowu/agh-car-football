@@ -79,7 +79,7 @@ let setVehicle = function (car, number) {
 
   var mesh = new Physijs.ConvexMesh(load_car, new THREE.MeshFaceMaterial(car.load_car_materials));
   mesh.position.y = 2;
-  mesh.position.x = number * 20;
+  mesh.position.x = number * 20 - 10;
   mesh.__dirtyPosition = true;
   mesh.castShadow = mesh.receiveShadow = true;
 
@@ -115,7 +115,7 @@ let setVehicle = function (car, number) {
 };
 
 initScene = function () {
-  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer = new THREE.WebGLRenderer({ antialias: false });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMapSoft = true;
@@ -278,18 +278,28 @@ initScene = function () {
     clone.position.set(pos[0], pos[1], pos[2]);
     clone.rotation.y = rot;
 
-    if (freeze) {
-      clone.setAngularFactor(new THREE.Vector3(0, 0, 0));
-      clone.setLinearFactor(new THREE.Vector3(0, 0, 0));
-    }
+    // if (freeze) {
+    //   clone.setAngularFactor(new THREE.Vector3(0, 0, 0));
+    //   clone.setLinearFactor(new THREE.Vector3(0, 0, 0));
+    // }
 
     scene.add(clone);
   }
 
   function objectsReady() {
-    placeObj(objects.oak, [0, 0, 0], 0);
+    placeObj(objects.oak, [40, 0, -10], Math.random() * 2 * Math.PI);
+    placeObj(objects.oak, [45, 0, 30], Math.random() * 2 * Math.PI);
 
-    placeObj(objects.bumper, [10, 0, 0], 0, true);
+    placeObj(objects.birch, [-30, 0, 25], Math.random() * 2 * Math.PI);
+    placeObj(objects.birch, [-27, 0, -20], Math.random() * 2 * Math.PI);
+
+    for (var i = 0; i < 10; i++) {
+      placeObj(objects.bumper, [-30, 2, i * 7 - 30], 0, true);
+      placeObj(objects.bumper, [30, 2, i * 7 - 30], 0, true);
+
+      placeObj(objects.bumper, [i * 7 - 30, 2, 30], Math.PI * 0.5, true);
+      placeObj(objects.bumper, [i * 7 - 30, 2, -30], Math.PI * 0.5, true);
+    }
   }
 
   json_loader.load('models/car1.json', function (car1, car1_materials) {

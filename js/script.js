@@ -36,6 +36,7 @@ var Axis = function (matrix, axis) {
 
 let resetVehicle = function (number) {
   vehicle[number].mesh.position.set(20 * number, 2, 0);
+  vehicle[number].mesh.setLinearVelocity(new THREE.Vector3(0,0,0))
   vehicle[number].mesh.__dirtyPosition = true;
   vehicle[number].mesh.rotation.set(0, 0, 0);
   vehicle[number].mesh.__dirtyRotation = true;
@@ -126,6 +127,8 @@ initScene = function () {
 
   scene = new Physijs.Scene();
   scene.setGravity(new THREE.Vector3(0, -30, 0));
+
+
   scene.addEventListener('update', function () {
     for (var i = 0; i < 2; i++) {
       if (input[i]) {
@@ -167,7 +170,7 @@ initScene = function () {
     }
   });
 
-  camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 1000);
+  camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.01, 2000);
   scene.add(camera);
 
   // Light
@@ -354,17 +357,25 @@ initScene = function () {
 
   config = {
     power: 5000,
-    suspension_stiffness: 10.88,
+    // suspension_stiffness: 10.88,
+    // suspension_compression: 1.83,
+    // suspension_damping: 0.28,
+    // max_suspension_travel: 500,
+    // fraction_slip: 10.5,
+    // max_suspension_force: 6000,
+    suspension_stiffness: 5,
     suspension_compression: 1.83,
     suspension_damping: 0.28,
     max_suspension_travel: 500,
     fraction_slip: 10.5,
     max_suspension_force: 6000,
     jump_force: 13000,
+    number_of_players: 2,
   };
 
   folder.add(config, 'power', 1000, 50000);
   folder.add(config, 'jump_force', 1, 100000);
+  folder.add(config, 'number_of_players', 1, 2, 1);
   // folder.add(config, 'suspension_stiffness', 1, 100);
   // folder.add(config, 'suspension_compression', 0.01, 5);
   // folder.add(config, 'suspension_damping', 0.01, 3);
@@ -380,11 +391,20 @@ render = function () {
   requestAnimationFrame(render);
 
   if (vehicle[0] && vehicle[1]) {
-    var distance = vehicle[0].mesh.position.distanceTo(vehicle[1].mesh.position);
-    camera.position
-      .copy(vehicle[0].mesh.position.clone().add(vehicle[0].mesh.position).divideScalar(2.0))
-      .add(new THREE.Vector3(40, 50 + distance * 0.3, 40));
-    camera.lookAt(vehicle[0].mesh.position.clone().add(vehicle[1].mesh.position).divideScalar(2.0));
+
+    if(config.number_of_players === 2){
+      var distance = vehicle[0].mesh.position.distanceTo(vehicle[1].mesh.position);
+      camera.position
+        .copy(vehicle[0].mesh.position.clone().add(vehicle[1].mesh.position).divideScalar(2.0))
+        .add(new THREE.Vector3(40, 50 + distance * 0.5, 40));
+      camera.lookAt(vehicle[0].mesh.position.clone().add(vehicle[1].mesh.position).divideScalar(2.0));
+    }
+    else{
+      // camera.position
+      // .copy(vehicle[0].mesh.position.clone().add(vehicle[0].mesh.position).divideScalar(2.0))
+      // .add(new THREE.Vector3(40, 50 + distance * 0.3, 40));
+      camera.lookAt(vehicle[0].mesh.position)
+    }
     // camera.lookAt(vehicle[0].mesh.position);
     // light.target.position.copy(vehicle.mesh.position);
     // light.position.addVectors(light.target.position, new THREE.Vector3(20, 20, -15));

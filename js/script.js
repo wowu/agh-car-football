@@ -259,7 +259,7 @@ initScene = function () {
   scene.add(ball);
 
   goal1 = new THREE.Mesh(new THREE.BoxGeometry(15, 20, 0.2), new THREE.MeshPhongMaterial(), 0);
-  goal1.position.set(-2, 0, -53);
+  goal1.position.set(-2, 0, -52);
   // scene.add(goal1);
 
   // goal1.addEventListener('collision', function(obj) {
@@ -269,7 +269,7 @@ initScene = function () {
   // })
 
   goal2 = new THREE.Mesh(new THREE.BoxGeometry(15, 10, 0.2), new THREE.MeshPhongMaterial(), 0);
-  goal2.position.set(-2, 0, 53);
+  goal2.position.set(-2, 0, 52);
   // scene.add(goal2);
 
   // Loader
@@ -511,10 +511,58 @@ initScene = function () {
             case 56: // 8
               resetGame(1, 0, false);
               break;
-            case 57: // 8
+            case 57: // 9
               resetGame(0, 1, false);
               break;
           }
+        });
+
+        gameControl.on('connect', function (gamepad) {
+          gamepad
+            .before('button5', () => {
+              // forward
+              input[0].power = true;
+              input[0].forward = true;
+            })
+            .after('button5', () => {
+              input[0].power = false;
+            })
+            .before('button4', () => {
+              // back
+              input[0].power = true;
+              input[0].forward = false;
+            })
+            .after('button4', () => {
+              input[0].power = false;
+            })
+            .before('button14', () => {
+              // left
+              input[0].direction = 1;
+            })
+            .after('button14', () => {
+              input[0].direction = null;
+            })
+            .before('button15', () => {
+              // right
+              input[0].direction = -1;
+            })
+            .after('button15', () => {
+              input[0].direction = null;
+            })
+            .before('button0', () => {
+              // A
+              jumpVehicle(0);
+            })
+            .before('button1', () => {
+              // B
+              if (vehicle[0]) {
+                resetVehicle(0, false);
+              }
+            })
+            .before('button3', () => {
+              // Y
+              resetGame(0, 0, true);
+            });
         });
 
         document.addEventListener('keyup', function (ev) {
@@ -539,7 +587,7 @@ initScene = function () {
                 resetVehicle(0, false);
               }
               break;
-            case 50: // T
+            case 50: // 2
               if (vehicle[1]) {
                 resetVehicle(1, false);
               }
@@ -587,8 +635,8 @@ initScene = function () {
   folder.add(config, 'camera_on_first');
   // folder.add(goal1.position, 'z', -70.0, -50.0)
   // folder.add(goal1.position, 'x', -10.0, 10.0)
-  folder.add(goal2.position, 'z', -70.0, -50.0);
-  folder.add(goal2.position, 'x', -10.0, 10.0);
+  // folder.add(goal2.position, 'z', -70.0, -50.0);
+  // folder.add(goal2.position, 'x', -10.0, 10.0);
 
   // folder.add(config, 'suspension_stiffness', 1, 100);
   // folder.add(config, 'suspension_compression', 0.01, 5);

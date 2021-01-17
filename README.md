@@ -74,6 +74,8 @@ Pomiższy diagram prezentuje
 ### Zdobycie punku sygnalizowane kolorem
 ![](docs/img2.png)
 
+## Film z rozgrywki
+[Nagranie z rozgrywki](https://aghedupl-my.sharepoint.com/:v:/g/personal/jaceknit_student_agh_edu_pl/EZ0lBYfSDKlPitFgiweSHDgBmz_ZQxFiYwwNoG-dRcNzVw?e=l1YkIb)
 
 ## Autorzy:
 

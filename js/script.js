@@ -4,7 +4,6 @@ Physijs.scripts.worker = 'vendor/physijs_worker.js';
 Physijs.scripts.ammo = 'ammo.js';
 
 const json_loader = new THREE.JSONLoader();
-const object_loader = new THREE.ObjectLoader();
 
 var initScene,
   render,
@@ -16,7 +15,6 @@ var initScene,
   ground,
   light,
   camera,
-  vehicle_body,
   vehicle,
   loader,
   config,
@@ -33,6 +31,20 @@ var points = [0, 0];
 
 vehicle = [undefined, undefined];
 input = [undefined, undefined];
+
+config = {
+  power: 1500,
+  suspension_stiffness: 50,
+  suspension_compression: 0.083,
+  suspension_damping: 100.05,
+  max_suspension_travel: 50000,
+  fraction_slip: 10.5,
+  max_suspension_force: 6000,
+  jump_force: 3000,
+  camera_on_first: false,
+  debug: window.location.search.substr(1) === 'debug'
+};
+
 
 var Axis = function (matrix, axis) {
   return new THREE.Vector3(
@@ -150,7 +162,7 @@ let setVehicle = function (car, number) {
       new THREE.Vector3(-1, 0, 0),
       0.5,
       0.7,
-      i < 2 ? false : true
+      i >= 2
     );
   }
 };
@@ -162,18 +174,20 @@ initScene = function () {
   renderer.shadowMapSoft = true;
   document.getElementById('viewport').appendChild(renderer.domElement);
 
-  render_stats = new Stats();
-  render_stats.domElement.style.position = 'absolute';
-  render_stats.domElement.style.top = '30px';
-  render_stats.domElement.style.zIndex = 100;
-  document.getElementById('viewport').appendChild(render_stats.domElement);
+  if(config.debug) {
+    render_stats = new Stats();
+    render_stats.domElement.style.position = 'absolute';
+    render_stats.domElement.style.top = '30px';
+    render_stats.domElement.style.zIndex = 100;
+    document.getElementById('viewport').appendChild(render_stats.domElement);
 
-  physics_stats = new Stats();
-  physics_stats.domElement.style.position = 'absolute';
-  physics_stats.domElement.style.top = '30px';
-  physics_stats.domElement.style.left = '80px';
-  physics_stats.domElement.style.zIndex = 100;
-  document.getElementById('viewport').appendChild(physics_stats.domElement);
+    physics_stats = new Stats();
+    physics_stats.domElement.style.position = 'absolute';
+    physics_stats.domElement.style.top = '30px';
+    physics_stats.domElement.style.left = '80px';
+    physics_stats.domElement.style.zIndex = 100;
+    document.getElementById('viewport').appendChild(physics_stats.domElement);
+  }
 
   scene = new Physijs.Scene();
   scene.setGravity(new THREE.Vector3(0, -30, 0));
@@ -196,16 +210,11 @@ initScene = function () {
           vehicle[i].setSteering(input[i].steering, 0);
           vehicle[i].setSteering(input[i].steering, 1);
 
-          // vehicle.setSteering(input.steering, 4);
-          // vehicle.setSteering(input.steering, 5);
 
           if (input[i].power === true && input[i].forward === true) {
             vehicle[i].applyEngineForce(config.power / (1 + Math.max(0.0, directionalSpeed) * 0.1));
           } else if (input[i].power === true && input[i].forward === false) {
             vehicle[i].applyEngineForce(-config.power * 0.6);
-            // } else if (input[i].power === false) {
-            //   vehicle[i].setBrake(20, 2);
-            //   vehicle[i].setBrake(20, 3);
           } else {
             vehicle[i].applyEngineForce(0);
           }
@@ -218,36 +227,34 @@ initScene = function () {
   });
 
   camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.01, 2000);
+  camera.position.copy(new THREE.Vector3(40, 90, 40));
+  camera.lookAt(new THREE.Vector3(0, 0, 0));
   scene.add(camera);
 
   // Light
 
-  // var sndlight = new THREE.AmbientLight( 0x333344);
-  // var sndlight = new THREE.AmbientLight( 0x434354);
-  var sndlight = new THREE.HemisphereLight('rgb(255,255,240)', 'rgb(191,180,153)', 1);
-  scene.add(sndlight);
+  var hemisphereLight = new THREE.HemisphereLight('rgb(255,255,240)', 'rgb(191,180,153)', 1);
+  scene.add(hemisphereLight);
 
-  // var light2 = new THREE.DirectionalLight( 0xFFFFFF,0.1 );
-  // scene.add( light2 );
 
   light = new THREE.DirectionalLight('rgb(75,75,75)', 0.2);
   light.position.set(200, 200, -150);
   light.target.position.copy(scene.position);
   light.castShadow = true;
-  light.shadowCameraLeft = -150;
-  light.shadowCameraTop = -150;
-  light.shadowCameraRight = 150;
-  light.shadowCameraBottom = 150;
+  light.shadowCameraLeft = -100;
+  light.shadowCameraTop = -100;
+  light.shadowCameraRight = 100;
+  light.shadowCameraBottom = 100;
   light.shadowCameraNear = 20;
-  light.shadowCameraFar = 1500;
+  light.shadowCameraFar = 500;
   light.shadowBias = -0.0001;
-  light.shadowMapWidth = light.shadowMapHeight = 2048; //no effect?
+  light.shadowMapWidth = light.shadowMapHeight = 4096;
   light.shadowDarkness = 0.7;
   scene.add(light);
 
   ball = new Physijs.SphereMesh(
-    new THREE.SphereGeometry(3, 12, 12),
-    Physijs.createMaterial(new THREE.MeshPhongMaterial({ color: 0xffffff }, 1, 3)),
+    new THREE.SphereGeometry(3, 24, 24),
+    Physijs.createMaterial(new THREE.MeshPhongMaterial({ color: 0xffffff , shininess: 1000}, 1, 3)),
     0.5
   );
 
@@ -260,17 +267,10 @@ initScene = function () {
 
   goal1 = new THREE.Mesh(new THREE.BoxGeometry(15, 20, 0.2), new THREE.MeshPhongMaterial(), 0);
   goal1.position.set(-2, 0, -52);
-  // scene.add(goal1);
 
-  // goal1.addEventListener('collision', function(obj) {
-  //   if (obj === ball) {
-  //     alert(1);
-  //   }
-  // })
 
   goal2 = new THREE.Mesh(new THREE.BoxGeometry(15, 10, 0.2), new THREE.MeshPhongMaterial(), 0);
   goal2.position.set(-2, 0, 52);
-  // scene.add(goal2);
 
   // Loader
   loader = new THREE.TextureLoader();
@@ -280,25 +280,23 @@ initScene = function () {
     new THREE.MeshLambertMaterial({
       map: loader.load('images/paper.jpg'),
     }),
-    0.8, // high friction
-    1 // low restitution
+    0.8,
+    1
   );
   ground_material.map.wrapS = ground_material.map.wrapT = THREE.RepeatWrapping;
   ground_material.map.repeat.set(3, 3);
 
+
   // Ground
-  var NoiseGen = new SimplexNoise();
 
   var ground_geometry = new THREE.PlaneGeometry(300, 300, 1, 1);
   ground_geometry.computeFaceNormals();
   ground_geometry.computeVertexNormals();
 
-  // If your plane is not square as far as face count then the HeightfieldMesh
-  // takes two more arguments at the end: # of x faces and # of z faces that were passed to THREE.PlaneMaterial
   ground = new Physijs.PlaneMesh(
     ground_geometry,
     ground_material,
-    0 // mass
+    0
   );
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
@@ -326,11 +324,6 @@ initScene = function () {
     meshObj.castShadow = true;
 
     meshObj.rotation.y = rot;
-    //
-    // if (freeze) {
-    //   meshObj.setAngularFactor(new THREE.Vector3(0, 0, 0));
-    //   meshObj.setLinearFactor(new THREE.Vector3(0, 0, 0));
-    // }
 
     scene.add(meshObj);
   }
@@ -614,36 +607,17 @@ initScene = function () {
     });
   });
 
-  const gui = new dat.GUI();
-  const folder = gui.addFolder('General');
-  folder.open();
 
-  config = {
-    power: 1500,
-    suspension_stiffness: 50,
-    suspension_compression: 0.083,
-    suspension_damping: 100.05,
-    max_suspension_travel: 50000,
-    fraction_slip: 10.5,
-    max_suspension_force: 6000,
-    jump_force: 3000,
-    camera_on_first: false,
-  };
 
-  folder.add(config, 'power', 0, 30000);
-  folder.add(config, 'jump_force', 1, 100000);
-  folder.add(config, 'camera_on_first');
-  // folder.add(goal1.position, 'z', -70.0, -50.0)
-  // folder.add(goal1.position, 'x', -10.0, 10.0)
-  // folder.add(goal2.position, 'z', -70.0, -50.0);
-  // folder.add(goal2.position, 'x', -10.0, 10.0);
+  if(config.debug) {
+    const gui = new dat.GUI();
+    const folder = gui.addFolder('General');
+    folder.open();
+    folder.add(config, 'power', 0, 30000);
+    folder.add(config, 'jump_force', 1, 100000);
+    folder.add(config, 'camera_on_first');
+  }
 
-  // folder.add(config, 'suspension_stiffness', 1, 100);
-  // folder.add(config, 'suspension_compression', 0.01, 5);
-  // folder.add(config, 'suspension_damping', 0.01, 3);
-  // folder.add(config, 'max_suspension_travel', 100, 5000);
-  // folder.add(config, 'fraction_slip', 1, 100);
-  // folder.add(config, 'max_suspension_force', 1000, 20000);
 
   requestAnimationFrame(render);
   scene.simulate();
@@ -665,9 +639,6 @@ render = function () {
       camera.position.copy(vehicle[0].mesh.position.clone().add(new THREE.Vector3(40, 60, 40)));
       camera.lookAt(vehicle[0].mesh.position);
     }
-    // camera.lookAt(vehicle[0].mesh.position);
-    // light.target.position.copy(vehicle.mesh.position);
-    // light.position.addVectors(light.target.position, new THREE.Vector3(20, 20, -15));
   }
 
   if (ball.position.z < goal1.position.z && !resetting) {

@@ -222,7 +222,9 @@ initScene = function () {
       }
 
       scene.simulate(undefined, 2);
-      physics_stats.update();
+      if(config.debug) {
+        physics_stats.update();
+      }
     }
   });
 
@@ -658,7 +660,9 @@ render = function () {
   }
 
   renderer.render(scene, camera);
-  render_stats.update();
+  if(config.debug) {
+    render_stats.update();
+  }
 };
 
 window.onload = initScene;
